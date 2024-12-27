@@ -1,0 +1,16 @@
+{
+  "name": "psw",
+  "version": "1.0.0",
+  "description": "Damian Mitros",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mqtt": "^5.10.3",
+    "ws": "^8.18.0"
+  }
+}
