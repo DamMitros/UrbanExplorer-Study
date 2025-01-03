@@ -1,4 +1,5 @@
 import Navigation from "./components/Navigation";
+import { UserProvider } from "../context/UserContext";
 // import "./styles/styles.css";
 
 export const metadata = {
@@ -13,8 +14,10 @@ export default function RootLayout({ children }) {
         <title>UrbanExplorer</title>  
       </head>
       <body>
-        <Navigation />
-        <main>{children}</main>
+        <UserProvider>
+          <Navigation />
+          <main>{children}</main>
+        </UserProvider>
       </body>
     </html>
   );

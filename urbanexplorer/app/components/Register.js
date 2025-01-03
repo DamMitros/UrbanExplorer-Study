@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function registerPage() {
+export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [formData, setFormData] = useState({
     email: "",

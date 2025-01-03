@@ -1,8 +1,37 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 export default function ExplorePage() {
+  const [cities, setCities] = useState([]);
+
+  useEffect(() => {
+    async function fetchCities() {
+      const res = await fetch("/api/cities");
+      if (res.ok) {
+        const data = await res.json();
+        setCities(data);
+      } else {
+        console.error("Błąd przy pobieraniu listy miast.");
+      }
+    }
+    fetchCities();
+  }, []);
+
   return (
     <div>
       <h1>Zwiedzaj Unikatowe Miejsca</h1>
-      <p>Tu coś będzie!</p>
+      <section>
+        <p>Odkrywaj zakamarki i landmarki z naszymi przewodnikami.</p>
+        <a>Wybierz miasto</a>
+        <ul>
+          {cities.map((city) => (
+            <li key={city.slug}>
+              <a href={`/explore/${city.slug}`}>{city.name}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

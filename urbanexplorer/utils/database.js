@@ -6,6 +6,7 @@ export async function connectToDB() {
   if (isConnected) return;
 
   try {
+    console.log('Próba połączenia z bazą danych...');
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,

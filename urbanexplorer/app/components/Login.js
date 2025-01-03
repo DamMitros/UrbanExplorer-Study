@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useUser } from "../../context/UserContext";
 
-export default function login() {
+export default function Login() {
+  const { setUser } = useUser(); 
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,7 +15,8 @@ export default function login() {
     } else {
       setPassword(e.target.value);
     }
-  }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -29,7 +32,9 @@ export default function login() {
 
       if (res.ok) {
         const data = await res.json();
+        setUser({ username: data.username, role: data.role }); 
         setMessage("Zalogowano");
+        window.location.href = "/";
       } else if (res.status === 401) {
         setMessage("Nieprawidłowe dane logowania");
       } else {
@@ -39,7 +44,7 @@ export default function login() {
       console.error("Błąd podczas logowania:", error);
       setMessage("Błąd serwera");
     }
-  };      
+  };
 
   return (
     <section>

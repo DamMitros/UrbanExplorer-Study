@@ -1,5 +1,5 @@
-import { connectToDB } from '@/utils/database';
-import User from '@/models/User';
+import { connectToDB } from '../../../utils/database';
+import User from '../../../models/User';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req) {
@@ -8,7 +8,7 @@ export async function POST(req) {
     if (!username || !email || !password) {
       return new Response(JSON.stringify({ error: 'Brak wymaganych danych' }), { status: 400 });
     }
-
+    console.log('Próba rejestracji:', username, email, role);
     await connectToDB();
 
     const existingUser = await User.findOne({ username });
