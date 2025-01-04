@@ -1,10 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-// import { useUser } from "../../../../context/UserContext";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { useUser } from "../../../../context/UserContext";
 
+const mapContainerStyle = {
+  width: "100%",
+  height: "400px",
+};//TYMCZASOWE DANE
 export default function PlacePage({ params }) {
-  // const { user } = useUser(); 
+  const { user } = useUser(); 
   const [placeData, setPlaceData] = useState(null);
   const [newComment, setNewComment] = useState("");
   const [city, setCity] = useState("");
@@ -26,12 +31,14 @@ export default function PlacePage({ params }) {
     fetchPlaceData();
   }, [params]);
 
+
   const handleAddComment = async () => {
     if (!newComment.trim()) return alert("Komentarz nie może być pusty!");
+
     const res = await fetch(`/api/cities/${city}/places/${placeName}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newComment}),//user: user.username, content: newComment }),
+      body: JSON.stringify({username: user.username, content: newComment }),
     });
 
     if (res.ok) {
@@ -43,43 +50,50 @@ export default function PlacePage({ params }) {
     }
   };
 
-  if (!placeData) return <p>Ładowanie danych o miejscu...</p>;
-
+  if (!placeData) return <p>Ładowanie danych o miejscu...</p>;  
+  const mapCenter = {lat: placeData.latitude, lng: placeData.longitude};
   return (
     <div>
       <h1>{placeData.name}</h1>
       <p>{placeData.description}</p>
+      {/* Mapa Google */}
+      <LoadScript googleMapsApiKey="AIzaSyCEGWjV-pmk4uV7lx9JXVCst0jI_yghgeY">
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={mapCenter}
+          zoom={13}
+        >
+          <Marker position={{lat: placeData.latitude, lng: placeData.longitude}} />
+        </GoogleMap>
+      </LoadScript>
 
-      {/* Google Maps (przyszłościowo do zaimplementowania???) */}
-      {/* {placeData.coordinates && (
-        <iframe
-          src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${placeData.coordinates.lat},${placeData.coordinates.lng}`}
-          width="600"
-          height="450"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-        ></iframe>
-      )} */}
-
+      {/* Sekcja komentarzy */}
       <section>
         <h2>Komentarze:</h2>
         <ul>
-          {placeData.comments?.map((comment, index) => (
-            <li key={index}>
-              <b>{comment.username}:</b> {comment.content}
-            </li>
-          ))}
+          {placeData.comments?.length > 0 ? (
+            placeData.comments.map((comment, index) => (
+              <li key={index}>
+                <b>{comment.username || "Anonim"}:</b> {comment.content}
+              </li>
+            ))
+          ) : (
+            <p>Brak komentarzy. Dodaj pierwszy komentarz!</p>
+          )}
         </ul>
 
-        <div>
-          <textarea
-            placeholder="Dodaj komentarz"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-          />
-          <button onClick={handleAddComment}>Dodaj komentarz</button>
-        </div>
+        {user ? (
+          <div>
+            <textarea
+              placeholder="Dodaj komentarz"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+            <button onClick={handleAddComment}>Dodaj komentarz</button>
+          </div>
+        ) : (
+          <p>Musisz być zalogowany, aby dodać komentarz.</p>
+        )}
       </section>
 
       <a href={`/explore/${city}`}>Wróć do miasta</a>

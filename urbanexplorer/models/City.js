@@ -7,6 +7,8 @@ const CitySchema = new mongoose.Schema({
     {
       name: { type: String, required: true },
       description: String,
+      latitude: { type: Number, required: true },
+      longitude: { type: Number, required: true },
       comments: [
         {
           username: String,
