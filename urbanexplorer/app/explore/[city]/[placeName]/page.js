@@ -7,13 +7,16 @@ import { useUser } from "../../../../context/UserContext";
 const mapContainerStyle = {
   width: "100%",
   height: "400px",
-};//TYMCZASOWE DANE
+};
+
 export default function PlacePage({ params }) {
-  const { user } = useUser(); 
+  const { user } = useUser();
   const [placeData, setPlaceData] = useState(null);
   const [newComment, setNewComment] = useState("");
   const [city, setCity] = useState("");
   const [placeName, setPlaceName] = useState("");
+  const [editCommentId, setEditCommentId] = useState(null); 
+  const [editedContent, setEditedContent] = useState(""); 
 
   useEffect(() => {
     async function fetchPlaceData() {
@@ -31,14 +34,13 @@ export default function PlacePage({ params }) {
     fetchPlaceData();
   }, [params]);
 
-
   const handleAddComment = async () => {
     if (!newComment.trim()) return alert("Komentarz nie może być pusty!");
 
     const res = await fetch(`/api/cities/${city}/places/${placeName}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({username: user.username, content: newComment }),
+      body: JSON.stringify({ username: user.username, content: newComment }),
     });
 
     if (res.ok) {
@@ -50,20 +52,50 @@ export default function PlacePage({ params }) {
     }
   };
 
-  if (!placeData) return <p>Ładowanie danych o miejscu...</p>;  
-  const mapCenter = {lat: placeData.latitude, lng: placeData.longitude};
+  const handleEditComment = async () => {
+    const res = await fetch(`/api/cities/${city}/places/${placeName}/comments/`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: editedContent, commentId: editCommentId }),
+    });
+
+    if (res.ok) {
+      const updatedPlace = await res.json();
+      setPlaceData(updatedPlace);
+      setEditCommentId(null); 
+      setEditedContent(""); 
+    } else {
+      alert("Błąd podczas edytowania komentarza.");
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    const res = await fetch(`/api/cities/${city}/places/${placeName}/comments/`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commentId }),
+    });
+
+    if (res.ok) {
+      const updatedPlace = await res.json();
+      setPlaceData(updatedPlace);
+    } else {
+      alert("Błąd podczas usuwania komentarza.");
+    }
+  };
+
+  if (!placeData) return <p>Ładowanie danych o miejscu...</p>;
+
+  const mapCenter = { lat: placeData.latitude, lng: placeData.longitude };
+
   return (
     <div>
       <h1>{placeData.name}</h1>
       <p>{placeData.description}</p>
       {/* Mapa Google */}
       <LoadScript googleMapsApiKey="AIzaSyCEGWjV-pmk4uV7lx9JXVCst0jI_yghgeY">
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={mapCenter}
-          zoom={13}
-        >
-          <Marker position={{lat: placeData.latitude, lng: placeData.longitude}} />
+        <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={16}>
+          <Marker position={{ lat: placeData.latitude, lng: placeData.longitude }} />
         </GoogleMap>
       </LoadScript>
 
@@ -72,9 +104,29 @@ export default function PlacePage({ params }) {
         <h2>Komentarze:</h2>
         <ul>
           {placeData.comments?.length > 0 ? (
-            placeData.comments.map((comment, index) => (
-              <li key={index}>
-                <b>{comment.username || "Anonim"}:</b> {comment.content}
+            placeData.comments.map((comment) => (
+              <li key={comment._id}>
+                <b>{comment.username}:</b> 
+                {editCommentId === comment._id ? (
+                  <div>
+                    <textarea
+                      value={editedContent}
+                      onChange={(e) => setEditedContent(e.target.value)}
+                    />
+                    <button onClick={() => handleEditComment(comment._id)}>Zapisz zmiany</button>
+                    <button onClick={() => setEditCommentId(null)}>Anuluj</button>
+                  </div>
+                ) : (
+                  <>
+                    {comment.content}
+                    {user?.username === comment.username && (
+                      <div>
+                        <button onClick={() => setEditCommentId(comment._id)}>Edytuj</button>
+                        <button onClick={() => handleDeleteComment(comment._id)}>Usuń</button>
+                      </div>
+                    )}
+                  </>
+                )}
               </li>
             ))
           ) : (

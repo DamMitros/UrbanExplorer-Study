@@ -32,7 +32,8 @@ export default function Login() {
 
       if (res.ok) {
         const data = await res.json();
-        setUser({ username: data.username, role: data.role }); 
+        const userData = {username: data.username,role: data.role,email: data.email, _id: data._id};      
+        setUser(userData); 
         setMessage("Zalogowano");
         window.location.href = "/";
       } else if (res.status === 401) {
