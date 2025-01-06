@@ -3,8 +3,11 @@
 import { useUser } from "../../context/UserContext";
 
 export default function Navigation() {
-  const { user } = useUser(); 
+  const { user, setUser } = useUser(); 
 
+  const handleLogout = () => {
+    setUser(null);
+  };
   return (
     <nav>
       <h1>UrbanExplorer</h1>
@@ -12,13 +15,14 @@ export default function Navigation() {
       <a href="/explore">Odkrywaj</a>
       <a href="/contact">Kontakt</a>
       {user ? (
-        <section>
+        <div>
           <a href="/{user.id}">Witaj, {user.username}!</a>
-        </section>
+          <button onClick={handleLogout}>Wyloguj się</button>
+        </div>
       ) : (
-        <section>
+        <div>
           <a href="/login">Zaloguj się</a>
-        </section>
+        </div>
       )}
     </nav>
   );
