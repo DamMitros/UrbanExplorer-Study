@@ -17,6 +17,7 @@ export default function PlacePage({ params }) {
   const [placeName, setPlaceName] = useState("");
   const [editCommentId, setEditCommentId] = useState(null); 
   const [editedContent, setEditedContent] = useState(""); 
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     async function fetchPlaceData() {
@@ -33,6 +34,12 @@ export default function PlacePage({ params }) {
 
     fetchPlaceData();
   }, [params]);
+
+  useEffect(() => {
+    if (placeData) {
+      setIsVerified(placeData.isVerified || false);
+    }
+  }, [placeData]);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return alert("Komentarz nie może być pusty!");
@@ -84,13 +91,40 @@ export default function PlacePage({ params }) {
     }
   };
 
+  const handleVerifyPlace = async (currentStatus) => {
+    try {
+      const res = await fetch(`/api/cities/${city}/places/${placeName}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: currentStatus ? 'unverify' : 'verify'
+        })
+      });
+
+      if (res.ok) {
+        setIsVerified(!currentStatus);
+        const updatedPlace = await res.json();
+        setPlaceData(updatedPlace);
+      }
+    } catch (error) {
+      console.error('Error weryfikując miejsce:', error);
+    }
+  };
+
   if (!placeData) return <p>Ładowanie danych o miejscu...</p>;
 
   const mapCenter = { lat: placeData.latitude, lng: placeData.longitude };
 
   return (
     <div>
-      <h1>{placeData.name}</h1>
+      <h1>{placeData.name} {isVerified && "✓"}</h1>
+      {(user?.role === 'guide' || user?.role === 'admin') && (
+        <button onClick={() => handleVerifyPlace(isVerified)}>
+          {isVerified ? 'Cofnij weryfikację' : 'Zweryfikuj'}
+        </button>
+      )}
       <p>{placeData.description}</p>
       {/* Mapa Google */}
       <LoadScript googleMapsApiKey="AIzaSyCEGWjV-pmk4uV7lx9JXVCst0jI_yghgeY">
@@ -121,7 +155,10 @@ export default function PlacePage({ params }) {
                     {comment.content}
                     {user?.username === comment.username && (
                       <div>
-                        <button onClick={() => setEditCommentId(comment._id)}>Edytuj</button>
+                        <button onClick={() => {
+                          setEditCommentId(comment._id);
+                          setEditedContent(comment.content);
+                        }}>Edytuj</button>
                         <button onClick={() => handleDeleteComment(comment._id)}>Usuń</button>
                       </div>
                     )}

@@ -95,7 +95,7 @@ export default function CityPage({ params }) {
       </LoadScript>
       <div>
         <CreatePost />
-        <PostsList city={cityData} />
+        <PostsList city={cityData} user123={null}/>
       </div>
       <div> 
         <a href="/explore">Wróć do listy miast</a>

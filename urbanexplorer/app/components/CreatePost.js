@@ -11,6 +11,7 @@ export default function CreatePost() {
   const [placeId, setPlaceId] = useState("");
   const [cities, setCities] = useState([]);
   const [places, setPlaces] = useState([]); 
+
   useEffect(() => {
     async function fetchCities() {
       const res = await fetch("/api/cities");
@@ -43,12 +44,12 @@ export default function CreatePost() {
     e.preventDefault();
 
     if (!title || !content) {
-      alert("Tytuł i treść są wymagane!");
+      alert("Tytuł i treść są wymagane!"); 
       return;
     }
 
     try {
-      const response = await fetch("/api/posts/create", {
+      const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content, slug, placeId, author: user }),

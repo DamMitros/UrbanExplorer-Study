@@ -1,20 +1,22 @@
 import mongoose from 'mongoose';
 
-let isConnected = false; 
+let isConnected = false;
 
-export async function connectToDB() {
+export const connectToDB = async () => {
   if (isConnected) return;
 
   try {
-    console.log('Próba połączenia z bazą danych...');
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
     });
+
     isConnected = true;
     console.log('Połączono z bazą danych');
   } catch (error) {
     console.error('Błąd podczas łączenia z bazą danych:', error);
+    isConnected = false;
     throw error;
   }
-}
+};

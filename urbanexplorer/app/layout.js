@@ -1,6 +1,6 @@
 import Navigation from "./components/Navigation";
 import { UserProvider } from "../context/UserContext";
-// import "./styles/styles.css";
+import './globals.css';
 
 export const metadata = {
   title: "UrbanExplorer",
@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
       <body>
         <UserProvider>
           <Navigation />
-          <main>{children}</main>
+          {children}
         </UserProvider>
       </body>
     </html>

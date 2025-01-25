@@ -18,9 +18,11 @@ export function UserProvider({ children }) {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUserState(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUserState(parsedUser);
     }
   }, []);
+  
 
   return (
     <UserContext.Provider value={{ user, setUser }}>
