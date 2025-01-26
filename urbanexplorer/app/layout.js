@@ -1,5 +1,6 @@
 import Navigation from "./components/Navigation";
 import { UserProvider } from "../context/UserContext";
+import { GoogleMapsProvider } from "../context/MapWrapper";
 import './globals.css';
 
 export const metadata = {
@@ -15,8 +16,10 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <UserProvider>
-          <Navigation />
-          {children}
+          <GoogleMapsProvider>
+            <Navigation />
+            {children}
+          </GoogleMapsProvider>
         </UserProvider>
       </body>
     </html>

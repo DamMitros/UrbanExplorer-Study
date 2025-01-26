@@ -3,63 +3,90 @@ import Post from "@/models/Post";
 import City from "@/models/City"; 
 import User from "@/models/User";
 
+export async function GET(req) {
+  try {
+    await connectToDB();
+    const { searchParams } = new URL(req.url);
+    const citySlug = searchParams.get("city");
+    const authorId = searchParams.get("author");
+    const placeId = searchParams.get("place");
+
+    const query = {};
+
+    if (citySlug) {
+      const city = await City.findOne({ slug: citySlug });
+      if (city) {
+        query.city = city._id;
+      }
+    }
+
+    if (authorId) {
+      query.author = authorId;
+    }
+
+    if (placeId) {
+      query.place = placeId;
+    }
+
+    const posts = await Post.find(query)
+      .populate('author', 'username')
+      .populate('city', 'name slug')
+      .sort({ createdAt: -1 });
+
+    return new Response(JSON.stringify(posts), { 
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    return new Response(
+      JSON.stringify({ error: "Server error", details: error.message }), 
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  }
+}
+
 export async function POST(req) {
-  const { title, content, slug, placeId, author } = await req.json();
   try {
     await connectToDB();
     
-    let city = null;
-    if (slug) {
-      city = await City.findOne({ slug: slug });
-      if (!city) {
-        return new Response("Miasto nie znalezione", { status: 404 });
-      }
-    }    
-    const user = await User.findOne({ username: author.username });
-    if (!user) {
-      console.log("Użytkownik nie znaleziony");
-      return new Response("Użytkownik nie znaleziony", { status: 404 });
+    const { title, content, city, place, blog, author } = await req.json();
+
+    if (!title || !content || !author) {
+      return new Response(
+        JSON.stringify({ error: "Brak wymaganych pól" }), 
+        { status: 400 }
+      );
     }
 
     const newPost = new Post({
       title,
       content,
-      author: user,
-      city: city._id || null,
-      place: placeId || null,
+      city,
+      place,
+      blog,
+      author
     });
 
-    await newPost.save();
+    const savedPost = await newPost.save();
+    await savedPost.populate('author', 'username');
 
     return new Response(
-      JSON.stringify({ success: true, message: "Post został utworzony!", post: newPost }),
+      JSON.stringify(savedPost), 
       { status: 201 }
     );
   } catch (error) {
-    console.error("Błąd podczas tworzenia posta:", error);
-    return new Response("Błąd serwera", { status: 500 });
-  }
-}
-
-export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const author = searchParams.get("author");
-  const city = searchParams.get("city");
-  const user = searchParams.get("user");
-  
-  try {
-    await connectToDB();
-
-    const query = {};
-    if (author) {
-      query.author = author;
-    }
-
-    const posts = await Post.find(query).populate('author').populate('city');
-
-    return new Response(JSON.stringify(posts), { status: 200 });
-  } catch (error) {
-    console.error("Błąd podczas pobierania postów:", error);
-    return new Response("Błąd serwera", { status: 500 });
+    console.error("Error creating post:", error);
+    return new Response(
+      JSON.stringify({ error: "Błąd podczas tworzenia posta" }), 
+      { status: 500 }
+    );
   }
 }

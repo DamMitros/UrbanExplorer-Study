@@ -1,9 +1,13 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
+import { useRouter } from "next/navigation";
 
 export default function PostsList({ city = null, place = null, user123 = null }) {
+  const router = useRouter();
+  const { user } = useUser();
   const [posts, setPosts] = useState([]);
-  const user = useUser();
 
   useEffect(() => {
     async function fetchPosts() {
@@ -14,14 +18,11 @@ export default function PostsList({ city = null, place = null, user123 = null })
         if (user123) query.push(`author=${user123._id}`);
         
         const queryString = query.length > 0 ? `?${query.join("&")}` : "";
-
         const res = await fetch(`/api/posts${queryString}`);
 
         if (res.ok) {
           const data = await res.json();
           setPosts(data);
-        } else {
-          console.error("Błąd przy pobieraniu listy postów.");
         }
       } catch (error) {
         console.error("Błąd sieci:", error);
@@ -31,50 +32,23 @@ export default function PostsList({ city = null, place = null, user123 = null })
     fetchPosts();
   }, [city, place, user123]);
 
-  const handleVerify = async (postId, currentStatus) => {
-    try {
-      const res = await fetch(`/api/posts/${postId}/verify`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          postId,
-          action: currentStatus ? 'unverify' : 'verify'
-        })
-      });
-
-      if (res.ok) {
-        setPosts(posts.map(post => 
-          post._id === postId 
-            ? {...post, isVerified: !currentStatus} 
-            : post
-        ));
-      }
-    } catch (error) {
-      console.error('Error verifying post:', error);
-    }
-  };
-
   return (
-    <div>
-      <h1>Lista postów</h1>
+    <div className="space-y-4">
       {posts.length > 0 ? (
-        <ul>
+        <div>
           {posts.map((post) => (
-            <li key={post._id}>
-              <h2>{post.title} {post.isVerified && "✓"}</h2>
-              <p>{post.content}</p>
-              {(user?.role === 'guide' || user?.role === 'admin') && (
-                <button onClick={() => handleVerify(post._id, post.isVerified)}>
-                  {post.isVerified ? 'Cofnij weryfikację' : 'Zweryfikuj'}
-                </button>
-              )}
-            </li>
+            <div key={post._id} className="p-4 bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer mb-4" onClick={() => router.push(`/posts/${post._id}`)}>
+              <div>
+                <h3 className="font-bold text-lg">{post.title}</h3>
+                <p className="text-sm text-gray-500 mt-2">Autor: {post.author?.username}</p>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
-        <p>Brak postów do wyświetlenia.</p>
+        <p className="text-center text-gray-500 py-4">
+          Brak postów do wyświetlenia.
+        </p>
       )}
     </div>
   );

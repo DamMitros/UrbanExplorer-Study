@@ -1,95 +1,50 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
-import { useUser } from "../../../../context/UserContext";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { GoogleMap, Marker } from "@react-google-maps/api";
+import { useUser } from "@/context/UserContext";
+import MapWrapper from "@/context/MapWrapper";
+import InteractionSection from "@/app/components/InteractionSection";
+import PostsList from "@/app/components/PostsList";
+import CreatePost from "@/app/components/CreatePost";
+import { useRouter } from "next/navigation";
 
 const mapContainerStyle = {
   width: "100%",
   height: "400px",
 };
 
-export default function PlacePage({ params }) {
+export default function PlacePage() {
+  const params = useParams();
+  const router = useRouter();
+  const { city, placeName } = params;
   const { user } = useUser();
+  
   const [placeData, setPlaceData] = useState(null);
-  const [newComment, setNewComment] = useState("");
-  const [city, setCity] = useState("");
-  const [placeName, setPlaceName] = useState("");
-  const [editCommentId, setEditCommentId] = useState(null); 
-  const [editedContent, setEditedContent] = useState(""); 
   const [isVerified, setIsVerified] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
 
   useEffect(() => {
     async function fetchPlaceData() {
-      const { city, placeName } = await params;
-      setCity(city);
-      setPlaceName(placeName);
-      const res = await fetch(`/api/cities/${city}/places/${placeName}`);
-      if (res.ok) {
-        setPlaceData(await res.json());
-      } else {
-        console.error("Nie udało się pobrać danych o miejscu.");
+      try {
+        const res = await fetch(`/api/cities/${city}/places/${placeName}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPlaceData(data);
+          setIsVerified(data.isVerified || false);
+        } else {
+          console.error("Error pobierając dane miejsca:", res.statusText);
+        }
+      } catch (error) {
+        console.error("Error pobierając dane miejsca:", error);
       }
     }
 
-    fetchPlaceData();
-  }, [params]);
-
-  useEffect(() => {
-    if (placeData) {
-      setIsVerified(placeData.isVerified || false);
+    if (city && placeName) {
+      fetchPlaceData();
     }
-  }, [placeData]);
-
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return alert("Komentarz nie może być pusty!");
-
-    const res = await fetch(`/api/cities/${city}/places/${placeName}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: user.username, content: newComment }),
-    });
-
-    if (res.ok) {
-      const updatedPlace = await res.json();
-      setPlaceData(updatedPlace);
-      setNewComment("");
-    } else {
-      alert("Błąd podczas dodawania komentarza.");
-    }
-  };
-
-  const handleEditComment = async () => {
-    const res = await fetch(`/api/cities/${city}/places/${placeName}/comments/`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: editedContent, commentId: editCommentId }),
-    });
-
-    if (res.ok) {
-      const updatedPlace = await res.json();
-      setPlaceData(updatedPlace);
-      setEditCommentId(null); 
-      setEditedContent(""); 
-    } else {
-      alert("Błąd podczas edytowania komentarza.");
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    const res = await fetch(`/api/cities/${city}/places/${placeName}/comments/`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ commentId }),
-    });
-
-    if (res.ok) {
-      const updatedPlace = await res.json();
-      setPlaceData(updatedPlace);
-    } else {
-      alert("Błąd podczas usuwania komentarza.");
-    }
-  };
+  }, [city, placeName]);
 
   const handleVerifyPlace = async (currentStatus) => {
     try {
@@ -109,83 +64,75 @@ export default function PlacePage({ params }) {
         setPlaceData(updatedPlace);
       }
     } catch (error) {
-      console.error('Error weryfikując miejsce:', error);
+      console.error('Error weryfikując miejsce', error);
     }
   };
 
-  if (!placeData) return <p>Ładowanie danych o miejscu...</p>;
+  if (!placeData) return <div className="p-4">Ładowanie...</div>;
 
-  const mapCenter = { lat: placeData.latitude, lng: placeData.longitude };
+  const mapCenter = { 
+    lat: placeData.latitude, 
+    lng: placeData.longitude 
+  };
 
   return (
-    <div>
-      <h1>{placeData.name} {isVerified && "✓"}</h1>
-      {(user?.role === 'guide' || user?.role === 'admin') && (
-        <button onClick={() => handleVerifyPlace(isVerified)}>
-          {isVerified ? 'Cofnij weryfikację' : 'Zweryfikuj'}
-        </button>
-      )}
-      <p>{placeData.description}</p>
-      {/* Mapa Google */}
-      <LoadScript googleMapsApiKey="AIzaSyCEGWjV-pmk4uV7lx9JXVCst0jI_yghgeY">
-        <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={16}>
-          <Marker position={{ lat: placeData.latitude, lng: placeData.longitude }} />
-        </GoogleMap>
-      </LoadScript>
-
-      {/* Sekcja komentarzy */}
-      <section>
-        <h2>Komentarze:</h2>
-        <ul>
-          {placeData.comments?.length > 0 ? (
-            placeData.comments.map((comment) => (
-              <li key={comment._id}>
-                <b>{comment.username}:</b> 
-                {editCommentId === comment._id ? (
-                  <div>
-                    <textarea
-                      value={editedContent}
-                      onChange={(e) => setEditedContent(e.target.value)}
-                    />
-                    <button onClick={() => handleEditComment(comment._id)}>Zapisz zmiany</button>
-                    <button onClick={() => setEditCommentId(null)}>Anuluj</button>
-                  </div>
-                ) : (
-                  <>
-                    {comment.content}
-                    {user?.username === comment.username && (
-                      <div>
-                        <button onClick={() => {
-                          setEditCommentId(comment._id);
-                          setEditedContent(comment.content);
-                        }}>Edytuj</button>
-                        <button onClick={() => handleDeleteComment(comment._id)}>Usuń</button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </li>
-            ))
-          ) : (
-            <p>Brak komentarzy. Dodaj pierwszy komentarz!</p>
+    <div className="container mx-auto p-4">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold"> {placeData.name}  {isVerified && <span className="ml-2 text-green-500">✓</span>}</h1>
+          {(user?.role === 'guide' || user?.role === 'admin') && (
+            <button onClick={() => handleVerifyPlace(isVerified)} className={`px-4 py-2 rounded-lg ${
+                isVerified ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
+              } text-white transition`}
+            >
+              {isVerified ? 'Cofnij weryfikację' : 'Zweryfikuj'}
+            </button>
           )}
-        </ul>
+        </div>
+        <p className="mt-2 text-gray-600">{placeData.description}</p>
+      </div>
 
-        {user ? (
-          <div>
-            <textarea
-              placeholder="Dodaj komentarz"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-            />
-            <button onClick={handleAddComment}>Dodaj komentarz</button>
+      <div className="mb-6 rounded-lg overflow-hidden shadow-lg">
+        <MapWrapper>
+          <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={16}>
+            <Marker position={mapCenter} />
+          </GoogleMap>
+        </MapWrapper>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        <div>
+          <InteractionSection targetType="place" targetId={placeData._id}/>
+        </div>
+
+        <div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Posty o tym miejscu</h2>
+              {user && (
+                <button onClick={() => setIsCreatingPost(!isCreatingPost)} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                  {isCreatingPost ? 'Anuluj' : 'Dodaj post'}
+                </button>
+              )}
+            </div>
+
+            {isCreatingPost ? (
+              <div className="mb-4">
+                <CreatePost defaultCity={city} defaultPlace={placeData._id} onPostCreated={() => {
+                    setIsCreatingPost(false);
+                  }} 
+                />
+              </div>
+            ) : (
+              <PostsList place={placeData} />
+            )}
           </div>
-        ) : (
-          <p>Musisz być zalogowany, aby dodać komentarz.</p>
-        )}
-      </section>
+        </div>
+      </div>
 
-      <a href={`/explore/${city}`}>Wróć do miasta</a>
+      <div className="mt-6">
+        <a onClick={()=> router.push(`/explore/${city}`)} className="text-blue-500 hover:underline"> Back to {city}</a>
+      </div>
     </div>
   );
 }

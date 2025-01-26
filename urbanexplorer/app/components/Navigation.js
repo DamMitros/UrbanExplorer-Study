@@ -16,7 +16,7 @@ export default function Navigation() {
         <div className="flex space-x-6 justify-center flex-grow">
           <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/")}>Strona główna</a>
           <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/explore")}>Odkrywaj</a>
-          <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("blogs")}>Blogi</a>
+          <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/blogs")}>Blogi</a>
           <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/contact")}>Kontakt</a>
           {user ? (
             <>

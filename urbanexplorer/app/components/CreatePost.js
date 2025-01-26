@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 
-export default function CreatePost() {
-  const { user, setUser } = useUser(); 
+export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId = "", onPostCreated = () => {} }) {
+  const { user } = useUser();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [slug, setSlug] = useState(""); 
-  const [placeId, setPlaceId] = useState("");
+  const [slug, setSlug] = useState(defaultCity);
+  const [placeId, setPlaceId] = useState(defaultPlace);
   const [cities, setCities] = useState([]);
-  const [places, setPlaces] = useState([]); 
+  const [places, setPlaces] = useState([]);
 
   useEffect(() => {
     async function fetchCities() {
@@ -49,51 +49,77 @@ export default function CreatePost() {
     }
 
     try {
+      const postData = {
+        title,
+        content,
+        author: user._id,
+        city: slug || null,
+        place: placeId || null,
+        blog: blogId || null
+      };
+
       const response = await fetch("/api/posts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, slug, placeId, author: user }),
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+        body: JSON.stringify(postData)
       });
 
       const data = await response.json();
+      
       if (response.ok) {
-        alert("Post został utworzony!");
         setTitle("");
         setContent("");
-        setSlug("");
-        setPlaceId("");
+        setSlug(defaultCity);
+        setPlaceId(defaultPlace);
+        onPostCreated();
+        alert("Post został utworzony!");
       } else {
-        alert("Błąd: " + (data.error || "Nieznany błąd"));
+        throw new Error(data.error || "Nieznany błąd");
       }
     } catch (error) {
-      alert("Błąd połączenia.", error);
+      alert("Błąd: " + error.message);
     }
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
         <input
           type="text"
           placeholder="Tytuł"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          className="w-full p-2 border rounded"
+          required
         />
+      </div>
+      
+      <div>
         <textarea
           placeholder="Treść"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          className="w-full p-2 border rounded min-h-[100px]"
+          required
         />
-        <select value={slug} onChange={(e) => setSlug(e.target.value)}>
-          <option value="">Wybierz miasto (opcjonalne)</option>
+      </div>
+
+      <div>
+        <select value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full p-2 border rounded" disabled={defaultCity !== ""}>
+          <option value="">Wybierz miasto</option>
           {cities.map((city) => (
             <option key={city.slug} value={city.slug}>
               {city.name}
             </option>
           ))}
         </select>
-        {slug && (
-          <select value={placeId} onChange={(e) => setPlaceId(e.target.value)}>
+      </div>
+
+      {slug && (
+        <div>
+          <select value={placeId} onChange={(e) => setPlaceId(e.target.value)} className="w-full p-2 border rounded" disabled={defaultPlace !== ""}>
             <option value="">Wybierz miejsce (opcjonalne)</option>
             {places.map((place) => (
               <option key={place._id} value={place._id}>
@@ -101,10 +127,10 @@ export default function CreatePost() {
               </option>
             ))}
           </select>
-        )}
-        <button type="submit">Stwórz post</button>
-      </form>
-    </>
-    
+        </div>
+      )}
+
+      <button type="submit" className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition">Stwórz post</button>
+    </form>
   );
 }
