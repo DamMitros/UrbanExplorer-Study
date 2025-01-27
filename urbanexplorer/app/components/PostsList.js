@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function PostsList({ city = null, place = null, blog = null }) {
+export default function PostsList({ city = null, place = null, blog = null, sortBy = "newest", searchQuery = "" }) {
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,8 @@ export default function PostsList({ city = null, place = null, blog = null }) {
           queryParams.append('city', city._id);
           if (place) queryParams.append('place', place._id);
         }
+        if (sortBy) queryParams.append('sortBy', sortBy);
+        if (searchQuery) queryParams.append('searchQuery', searchQuery);
 
         const res = await fetch(`/api/posts?${queryParams}`);
         
@@ -34,7 +36,7 @@ export default function PostsList({ city = null, place = null, blog = null }) {
       }
     }
     fetchPosts();
-  }, [city, place, blog]);
+  }, [city, place, blog, sortBy, searchQuery]);
 
   if (loading) {
     return <div className="text-center p-4 text-gray-500">Ładowanie postów...</div>;
