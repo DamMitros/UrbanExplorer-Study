@@ -2,7 +2,7 @@ import { connectToDB } from "@/utils/database";
 import City from "@/models/City";
 
 export async function GET(req, { params }) {
-  const { CitySlug, placeName } = params;
+  const { CitySlug, placeName } = await params; 
 
   try {
     await connectToDB();

@@ -16,14 +16,20 @@ export default function InteractionSection({ targetType, targetId }) {
 
   const fetchVotes = async () => {
     try {
-      const res = await fetch(`/api/votes?targetType=${targetType}&targetId=${targetId}`);
+      const queryParams = new URLSearchParams({
+        targetType,
+        targetId,
+        ...(user && { userId: user._id })
+      });
+      
+      const res = await fetch(`/api/votes?${queryParams}`);
       if (res.ok) {
         const data = await res.json();
         setVotes({
           upvotes: data.upvotes,
           downvotes: data.downvotes
         });
-        setUserVote(data.currentVote);
+        setUserVote(data.userVote);
         setVoteId(data.voteId);
       }
     } catch (error) {
@@ -39,21 +45,44 @@ export default function InteractionSection({ targetType, targetId }) {
 
     try {
       let res;
-
-      if (userVote === value) {
-        res = await fetch(`/api/votes/${voteId}`, {
-          method: 'DELETE'
-        });
-      } else if (userVote) {
-        res = await fetch(`/api/votes/${voteId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value })
-        });
+      
+      if (voteId) {
+        if (userVote === value) {
+          res = await fetch(`/api/votes/${voteId}`, {
+            method: 'DELETE'
+          });
+          
+          if (res.ok) {
+            setUserVote(null);
+            setVoteId(null);
+            setVotes(prev => ({
+              ...prev,
+              [value === 1 ? 'upvotes' : 'downvotes']: prev[value === 1 ? 'upvotes' : 'downvotes'] - 1
+            }));
+          }
+        } else {
+          res = await fetch(`/api/votes/${voteId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ value })
+          });
+          
+          if (res.ok) {
+            setUserVote(value);
+            setVotes(prev => ({
+              upvotes: prev.upvotes + (value === 1 ? 1 : -1),
+              downvotes: prev.downvotes + (value === -1 ? 1 : -1)
+            }));
+          }
+        }
       } else {
         res = await fetch('/api/votes', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             targetType,
             targetId,
@@ -61,19 +90,19 @@ export default function InteractionSection({ targetType, targetId }) {
             value
           })
         });
-      }
-
-      if (res.ok) {
-        const data = await res.json();
-        setVotes({
-          upvotes: data.upvotes,
-          downvotes: data.downvotes
-        });
-        setUserVote(data.currentVote);
-        if (data.voteId) setVoteId(data.voteId);
+        
+        if (res.ok) {
+          const data = await res.json();
+          setVoteId(data.voteId);
+          setUserVote(value);
+          setVotes(prev => ({
+            ...prev,
+            [value === 1 ? 'upvotes' : 'downvotes']: prev[value === 1 ? 'upvotes' : 'downvotes'] + 1
+          }));
+        }
       }
     } catch (error) {
-      console.error('Błąd podczas głosowania:', error);
+      console.error('Błąd:', error);
     }
   };
 

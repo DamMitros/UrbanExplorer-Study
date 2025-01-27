@@ -1,4 +1,3 @@
-// app/api/comments/[commentId]/route.js
 import { connectToDB } from '@/utils/database';
 import Comment from '@/models/Comment';
 

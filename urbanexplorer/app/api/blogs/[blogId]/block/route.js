@@ -15,7 +15,7 @@ export async function PUT(req, { params }) {
 
     if (!blog) {
       return new Response(
-        JSON.stringify({ error: "Blog not found" }), 
+        JSON.stringify({ error: "Blog nie znaleziono" }), 
         { status: 404 }
       );
     }
@@ -23,7 +23,7 @@ export async function PUT(req, { params }) {
     return new Response(JSON.stringify(blog), { status: 200 });
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: "Server error" }), 
+      JSON.stringify({ error: "Błąd serwera" }), 
       { status: 500 }
     );
   }

@@ -6,6 +6,7 @@ import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
 import { useUser } from "@/context/UserContext";
 import CreatePost from "@/app/components/CreatePost";
 import MapWrapper from "@/context/MapWrapper";
+import PostsList from "@/app/components/PostsList";
 
 export default function CityPage() {
   const router = useRouter();
@@ -15,7 +16,6 @@ export default function CityPage() {
   const [cityData, setCityData] = useState(null);
   const [keyword, setKeyword] = useState("");
   const [selectedPlace, setSelectedPlace] = useState(null);
-  const [posts, setPosts] = useState([]);
   const [filteredPlaces, setFilteredPlaces] = useState([]);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
 
@@ -36,23 +36,6 @@ export default function CityPage() {
       fetchCityData();
     }
   }, [city, keyword]);
-
-  useEffect(() => {
-    async function fetchPosts() {
-      try {
-        const res = await fetch(`/api/posts?city=${city}`);
-        if (res.ok) {
-          const data = await res.json();
-          setPosts(data);
-        }
-      } catch (error) {
-        console.error("Error pobierając posty:", error);
-      }
-    }
-    if (city) {
-      fetchPosts();
-    }
-  }, [city]);
 
   if (!cityData) return <div className="p-4">Ładowanie...</div>;
 
@@ -139,20 +122,10 @@ export default function CityPage() {
 
           {isCreatingPost ? (
             <div className="bg-white p-4 rounded-lg shadow mb-4">
-              <CreatePost defaultCity={city} onPostCreated={() => {
-                setIsCreatingPost(false);
-                fetchPosts();
-              }} />
+              <CreatePost defaultCity={city} onPostCreated={() => {setIsCreatingPost(false)}} />
             </div>
           ) : (
-            <div className="space-y-4">
-              {posts.map((post) => (
-                <div key={post._id} className="p-4 bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer" onClick={() => router.push(`/posts/${post._id}`)}>
-                  <h3 className="font-bold text-lg">{post.title}</h3>
-                  <p className="text-sm text-gray-500">Autor: {post.author?.username}</p>
-                </div>
-              ))}
-            </div>
+            <PostsList city={cityData} />
           )}
         </div>
       </div>

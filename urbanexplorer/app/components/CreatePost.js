@@ -9,21 +9,37 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
   const [content, setContent] = useState("");
   const [slug, setSlug] = useState(defaultCity);
   const [placeId, setPlaceId] = useState(defaultPlace);
+  const [selectedBlogId, setSelectedBlogId] = useState(blogId);
   const [cities, setCities] = useState([]);
   const [places, setPlaces] = useState([]);
+  const [blogs, setBlogs] = useState([]);
 
   useEffect(() => {
-    async function fetchCities() {
-      const res = await fetch("/api/cities");
-      if (res.ok) {
-        const data = await res.json();
-        setCities(data);
-      } else {
-        console.error("Błąd przy pobieraniu listy miast.");
+    async function fetchInitialData() {
+      try {
+        const [citiesRes, blogsRes] = await Promise.all([
+          fetch("/api/cities"),
+          fetch(`/api/blogs?author=${user._id}`)
+        ]);
+
+        if (citiesRes.ok) {
+          const citiesData = await citiesRes.json();
+          setCities(citiesData);
+        }
+
+        if (blogsRes.ok) {
+          const blogsData = await blogsRes.json();
+          setBlogs(blogsData.filter(blog => blog.author._id === user._id));
+        }
+      } catch (error) {
+        console.error("Błąd podczas pobierania danych:", error);
       }
     }
-    fetchCities();
-  }, []);
+    
+    if (user) {
+      fetchInitialData();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (slug) {
@@ -31,48 +47,74 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
         const res = await fetch(`/api/cities/${slug}`);
         if (res.ok) {
           const data = await res.json();
-          setPlaces(data.places); 
+          setPlaces(data.places);
         }
       }
       fetchPlaces();
     } else {
-      setPlaces([]); 
+      setPlaces([]);
     }
   }, [slug]);
+
+  const filteredBlogs = blogs.filter(blog => {
+    if (!slug) return true; 
+    return !blog.city || blog.city === slug;
+  });
+
+  const handleCityChange = (e) => {
+    const newSlug = e.target.value;
+    setSlug(newSlug);
+    setPlaceId(""); 
+    
+    const currentBlog = blogs.find(b => b._id === selectedBlogId);
+    if (currentBlog && currentBlog.city && currentBlog.city !== newSlug) {
+      setSelectedBlogId("");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!title || !content) {
-      alert("Tytuł i treść są wymagane!"); 
+      alert("Tytuł i treść są wymagane!");
       return;
     }
 
     try {
+      let cityId = null;
+      if (slug) {
+        const cityRes = await fetch(`/api/cities/${slug}`);
+        if (cityRes.ok) {
+          const cityData = await cityRes.json();
+          cityId = cityData._id;
+        }
+      }
+
       const postData = {
         title,
         content,
         author: user._id,
-        city: slug || null,
+        city: cityId || null,
         place: placeId || null,
-        blog: blogId || null
+        blog: selectedBlogId || null
       };
 
       const response = await fetch("/api/posts", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
+        headers: {
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(postData)
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         setTitle("");
         setContent("");
         setSlug(defaultCity);
         setPlaceId(defaultPlace);
+        setSelectedBlogId(blogId);
         onPostCreated();
         alert("Post został utworzony!");
       } else {
@@ -95,7 +137,7 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
           required
         />
       </div>
-      
+
       <div>
         <textarea
           placeholder="Treść"
@@ -107,7 +149,7 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
       </div>
 
       <div>
-        <select value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full p-2 border rounded" disabled={defaultCity !== ""}>
+        <select value={slug} onChange={handleCityChange} className="w-full p-2 border rounded" disabled={defaultCity !== ""}>
           <option value="">Wybierz miasto</option>
           {cities.map((city) => (
             <option key={city.slug} value={city.slug}>
@@ -129,6 +171,17 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
           </select>
         </div>
       )}
+
+      <div>
+        <select value={selectedBlogId} onChange={(e) => setSelectedBlogId(e.target.value)} className="w-full p-2 border rounded" disabled={blogId !== ""}>
+          <option value="">Wybierz blog (opcjonalne)</option>
+          {filteredBlogs.map((blog) => (
+            <option key={blog._id} value={blog._id}>
+              {blog.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <button type="submit" className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition">Stwórz post</button>
     </form>

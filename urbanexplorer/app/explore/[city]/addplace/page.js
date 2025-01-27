@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { GoogleMap, Marker } from "@react-google-maps/api";
+import MapWrapper from "@/context/MapWrapper";
 
 export default function AddPlacePage({ params }) {
   const { city } = React.use(params);
@@ -83,18 +84,13 @@ export default function AddPlacePage({ params }) {
           onChange={(e) => setNewPlace({ ...newPlace, description: e.target.value })}
         />
         <h3>Wybierz lokalizację na mapie:</h3>
-        <LoadScript googleMapsApiKey="AIzaSyCEGWjV-pmk4uV7lx9JXVCst0jI_yghgeY">
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={defaultCenter}
-            zoom={13}
-            onClick={handleMapClick}
-          >
+        <MapWrapper>
+          <GoogleMap mapContainerStyle={mapContainerStyle} center={defaultCenter} zoom={13} onClick={handleMapClick}>
             {newPlace.latitude && newPlace.longitude && (
               <Marker position={{ lat: newPlace.latitude, lng: newPlace.longitude }} />
             )}
           </GoogleMap>
-        </LoadScript>
+        </MapWrapper>
         {newPlace.latitude && newPlace.longitude && (
           <p>
             Wybrana lokalizacja: {newPlace.latitude.toFixed(5)}, {newPlace.longitude.toFixed(5)}

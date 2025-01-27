@@ -131,7 +131,7 @@ export default function PlacePage() {
       </div>
 
       <div className="mt-6">
-        <a onClick={()=> router.push(`/explore/${city}`)} className="text-blue-500 hover:underline"> Back to {city}</a>
+        <a onClick={()=> router.push(`/explore/${city}`)} className="text-blue-500 hover:underline"> Powrót do {city}</a>
       </div>
     </div>
   );

@@ -1,55 +1,39 @@
 import { connectToDB } from "@/utils/database";
-import Post from "@/models/Post";
-import City from "@/models/City"; 
-import User from "@/models/User";
+import models from "@/models";
 
 export async function GET(req) {
   try {
-    await connectToDB();
     const { searchParams } = new URL(req.url);
-    const citySlug = searchParams.get("city");
-    const authorId = searchParams.get("author");
-    const placeId = searchParams.get("place");
+    const city = searchParams.get('city');
+    const place = searchParams.get('place'); 
+    const blog = searchParams.get('blog');
+    const author = searchParams.get('author');
+
+    await connectToDB();
 
     const query = {};
+    
+    if (city) query.city = city;
+    if (place) query.place = place;
+    if (blog) query.blog = blog;
+    if (author) query.author = author;
 
-    if (citySlug) {
-      const city = await City.findOne({ slug: citySlug });
-      if (city) {
-        query.city = city._id;
-      }
-    }
-
-    if (authorId) {
-      query.author = authorId;
-    }
-
-    if (placeId) {
-      query.place = placeId;
-    }
-
-    const posts = await Post.find(query)
+    const posts = await models.Post.find(query)
       .populate('author', 'username')
       .populate('city', 'name slug')
       .sort({ createdAt: -1 });
 
-    return new Response(JSON.stringify(posts), { 
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    return new Response(JSON.stringify(posts), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200
     });
+
   } catch (error) {
-    console.error("Error fetching posts:", error);
-    return new Response(
-      JSON.stringify({ error: "Server error", details: error.message }), 
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    console.error('Error fetching posts:', error);
+    return new Response(JSON.stringify({ error: 'Failed to fetch posts' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
+    });
   }
 }
 
@@ -66,7 +50,7 @@ export async function POST(req) {
       );
     }
 
-    const newPost = new Post({
+    const newPost = new models.Post({
       title,
       content,
       city,

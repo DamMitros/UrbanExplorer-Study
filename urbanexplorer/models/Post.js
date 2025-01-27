@@ -10,7 +10,8 @@ const PostSchema = new mongoose.Schema({
     required: [true, 'Treść jest wymagana']
   },
   city: {
-    type: String, 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'City', 
     required: false
   },
   place: {

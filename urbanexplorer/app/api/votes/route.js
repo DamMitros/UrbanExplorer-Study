@@ -1,4 +1,3 @@
-// app/api/votes/route.js
 import { connectToDB } from '@/utils/database';
 import Vote from '@/models/Vote';
 
@@ -42,7 +41,10 @@ export async function POST(req) {
     });
 
     if (existingVote) {
-      return new Response(JSON.stringify({ error: "Vote already exists" }), { status: 400 });
+      return new Response(
+        JSON.stringify({ error: "Użytkownik już zagłosował na ten element" }), 
+        { status: 400 }
+      );
     }
 
     const newVote = await Vote.create({
