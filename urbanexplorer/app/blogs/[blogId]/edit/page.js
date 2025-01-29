@@ -9,6 +9,7 @@ export default function EditBlogPage() {
   const { user } = useUser();
   const [message, setMessage] = useState('');
   const [cities, setCities] = useState([]);
+  const [blog, setBlog] = useState(null);
   const [blogData, setBlogData] = useState({
     name: '',
     description: '',
@@ -24,11 +25,12 @@ export default function EditBlogPage() {
         ]);
 
         if (blogRes.ok) {
-          const blog = await blogRes.json();
+          const blogData = await blogRes.json();
+          setBlog(blogData);
           setBlogData({
-            name: blog.name,
-            description: blog.description,
-            city: blog.city || ''
+            name: blogData.name,
+            description: blogData.description,
+            city: blogData.city || ''
           });
         }
 
@@ -40,11 +42,15 @@ export default function EditBlogPage() {
         setMessage('Błąd podczas pobierania danych');
       }
     }
-    fetchData();
+
+    if (blogId) {
+      fetchData();
+    }
   }, [blogId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
       const res = await fetch(`/api/blogs/${blogId}`, {
         method: 'PUT',
@@ -54,10 +60,11 @@ export default function EditBlogPage() {
         body: JSON.stringify(blogData)
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         router.push(`/blogs/${blogId}`);
       } else {
-        const data = await res.json();
         setMessage(data.error || 'Wystąpił błąd podczas aktualizacji bloga');
       }
     } catch (error) {
@@ -65,8 +72,8 @@ export default function EditBlogPage() {
     }
   };
 
-  if (!user || (user._id !== blog?.author._id && user.role !== 'admin')) {
-    return <div>Brak dostępu</div>;
+  if (!user || (blog && user._id !== blog.author._id && user.role !== 'admin')) {
+    return <div className="text-center py-8">Brak dostępu</div>;
   }
 
   return (
@@ -106,9 +113,7 @@ export default function EditBlogPage() {
 
         <div>
           <label htmlFor="city" className="block mb-2">Miasto:</label>
-          <select id="city" value={blogData.city} className="w-full p-2 border rounded" onChange={(e) =>
-           setBlogData({ ...blogData, city: e.target.value })}
-          >
+          <select id="city" value={blogData.city} onChange={(e) => setBlogData({ ...blogData, city: e.target.value })} className="w-full p-2 border rounded">
             <option value="">Wybierz miasto (opcjonalne)</option>
             {cities.map((city) => (
               <option key={city.slug} value={city.slug}>
@@ -120,12 +125,9 @@ export default function EditBlogPage() {
 
         <div className="flex justify-between">
           <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Zapisz zmiany</button>
-          <button type="button" onClick={() => router.back()} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Anuluj</button>
+          <button type="button"onClick={() => router.back()} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Anuluj</button>
         </div>
       </form>
     </div>
   );
 }
-
-
-//najpierw trzeba zrobić fetcha na posty i miasta (bez sensu bede znowu wszystko rozwalal)

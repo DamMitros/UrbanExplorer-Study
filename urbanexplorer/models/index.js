@@ -6,6 +6,4 @@ import City from './City';
 import Comment from './Comment';
 import Vote from './Vote';
 
-const models = { User, Post, Blog, City, Comment, Vote };
-
-export default models;
+export default {Post, User, Blog, City, Comment, Vote};

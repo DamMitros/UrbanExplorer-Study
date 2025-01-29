@@ -1,16 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/context/UserContext';
 import PostsList from '@/app/components/PostsList';
 
 export default function PostsPage() {
+  const router = useRouter();
+  const { user } = useUser();
   const [cities, setCities] = useState([]);
   const [places, setPlaces] = useState([]);
   const [filters, setFilters] = useState({
     city: '',
     place: '',
     searchQuery: '',
-    sortBy: 'newest'
+    sortBy: 'newest',
+    searchType: 'title' 
   });
 
   const debounce = (func, wait) => {
@@ -69,17 +74,28 @@ export default function PostsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-8">Wszystkie posty</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Wszystkie posty</h1>
+        {user && (
+          <button onClick={() => router.push('/posts/new')} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition duration-200">Utwórz nowy post</button>
+        )}
+      </div>
 
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
+          <div className="flex gap-2">
             <input
               type="text"
               placeholder="Szukaj postów..."
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full p-2 border rounded"
             />
+            <select value={filters.searchType} onChange={(e) => setFilters({...filters, searchType: e.target.value})} className="p-2 border rounded bg-white">
+              <option value="title">Tytuł</option>
+              <option value="content">Treść</option>
+              <option value="author">Autor</option>
+              <option value="all">Wszystko</option>
+            </select>
           </div>
 
           <div>
@@ -123,6 +139,7 @@ export default function PostsPage() {
           place={filters.place ? places.find(p => p._id === filters.place) : null}
           sortBy={filters.sortBy}
           searchQuery={filters.searchQuery}
+          searchType={filters.searchType}
         />
       </div>
     </div>

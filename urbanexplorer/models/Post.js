@@ -9,6 +9,10 @@ const PostSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Treść jest wymagana']
   },
+  attachments: [{
+    type: String,
+    default: []
+  }],
   city: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'City', 

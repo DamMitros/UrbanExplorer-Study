@@ -87,51 +87,71 @@ export default function Comments({ targetType, targetId }) {
   };
 
   return (
-    <div className="comments-section mt-4">
-      <h3 className="text-xl font-bold mb-4">Komentarze</h3>
-      
+    <div className="space-y-4">
       {user && (
-        <form onSubmit={handleSubmit} className="mb-4">
+        <form onSubmit={handleSubmit} className="mb-6">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="w-full p-2 border rounded"
-            placeholder="Dodaj komentarz..."
+            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-shadow duration-200"
+            placeholder="Napisz komentarz..."
+            rows="3"
           />
-          <button type="submit" className="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Dodaj komentarz</button>
+          <div className="flex justify-end mt-2">
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Opublikuj</button>
+          </div>
         </form>
       )}
 
       <div className="space-y-4">
         {comments.map(comment => (
-          <div key={comment._id} className="p-3 bg-gray-50 rounded">
+          <div key={comment._id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
             {editingId === comment._id ? (
-              <div>
+              <div className="space-y-3">
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows="3"
                 />
-                <div className="mt-2 space-x-2">
-                  <button onClick={() => handleEdit(comment._id)} className="bg-green-500 text-white px-3 py-1 rounded">Zapisz</button>
-                  <button onClick={() => setEditingId(null)} className="bg-gray-500 text-white px-3 py-1 rounded">Anuluj</button>
+                <div className="flex justify-end space-x-2">
+                  <button onClick={() => setEditingId(null)} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors duration-200">Anuluj</button>
+                  <button onClick={() => handleEdit(comment._id)} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200">Zapisz</button>
                 </div>
               </div>
             ) : (
               <div>
-                <p className="font-bold">{comment.author.username}</p>
-                <p>{comment.content}</p>
-                {(user?._id === comment.author._id || user?.role === 'admin') && (
-                  <div className="mt-2 space-x-2">
-                    {user._id === comment.author._id && (
-                      <button onClick={() => {
-                        setEditingId(comment._id);
-                        setEditContent(comment.content);
-                      }}className="text-blue-500 hover:underline">Edytuj</button>
-                    )}
-                    <button onClick={() => handleDelete(comment._id)} className="text-red-500 hover:underline">Usuń</button>
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-sm font-medium">{comment.author.username[0].toUpperCase()}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{comment.author.username}</p>
+                      <p className="text-sm text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                )}
+                  {(user?._id === comment.author._id || user?.role === 'admin') && (
+                    <div className="flex items-center space-x-2">
+                      {user._id === comment.author._id && (
+                        <button onClick={() => {
+                            setEditingId(comment._id);
+                            setEditContent(comment.content);
+                          }} className="text-gray-600 hover:text-blue-600 transition-colors duration-200">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                          </svg>
+                        </button>
+                      )}
+                      <button onClick={() => handleDelete(comment._id)} className="text-gray-600 hover:text-red-600 transition-colors duration-200">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
               </div>
             )}
           </div>

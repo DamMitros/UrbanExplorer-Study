@@ -30,6 +30,29 @@ export default function BlogDetailsPage() {
     fetchBlog();
   }, [blogId]);
 
+  const handleDeleteBlog = async () => {
+    const shouldDeletePosts = window.confirm(
+      "Czy chcesz usunąć wszystkie posty związane z tym blogiem?"
+    );
+
+    if (!window.confirm("Czy na pewno chcesz usunąć ten blog?")) return;
+
+    try {
+      const res = await fetch(`/api/blogs/${blogId}?deletePosts=${shouldDeletePosts}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        router.push('/blogs');
+      } else {
+        const data = await res.json();
+        console.error('Błąd podczas usuwania bloga:', data.error);
+      }
+    } catch (error) {
+      console.error('Błąd podczas usuwania bloga:', error);
+    }
+  };
+
   if (!blog) {
     return <div className="text-center py-10">Ładowanie...</div>;
   }
@@ -37,12 +60,23 @@ export default function BlogDetailsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h1 className="text-3xl font-bold mb-4">{blog.name}</h1>
-        <p className="text-gray-600 mb-4">{blog.description}</p>
-        <div className="flex items-center text-sm text-gray-500">
-          <span>Autor: {blog.author?.username}</span>
-          {blog.city && <span className="ml-4">Miasto: {blog.city}</span>}
-          <span className="ml-4">Utworzono: {new Date(blog.createdAt).toLocaleDateString()}</span>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-4">{blog.name}</h1>
+            <p className="text-gray-600 mb-4">{blog.description}</p>
+            <div className="flex items-center text-sm text-gray-500">
+              <span>Autor: {blog.author?.username}</span>
+              {blog.city && <span className="ml-4">Miasto: {blog.city}</span>}
+              <span className="ml-4">Utworzono: {new Date(blog.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+          
+          {(user?._id === blog.author._id || user?.role === 'admin') && (
+            <div className="flex gap-2">
+              <button onClick={() => router.push(`/blogs/${blog._id}/edit`)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Edytuj</button>
+              <button onClick={handleDeleteBlog} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Usuń</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -58,17 +92,14 @@ export default function BlogDetailsPage() {
 
         {isCreatingPost && (
           <div className="mb-8">
-            <CreatePost blogId={blogId} onPostCreated={() => {
-                setIsCreatingPost(false);
-              }}
-            />
+            <CreatePost blogId={blogId} onPostCreated={() => {setIsCreatingPost(false)}}/>
           </div>
         )}
         <PostsList blog={blog} />
       </div>
 
       <div className="mt-6">
-        <button onClick={() => router.push('/blogs')} className="text-blue-500 hover:text-blue-700"> ← Powrót do listy blogów</button>
+        <button onClick={() => router.push('/blogs')} className="text-blue-500 hover:text-blue-700">← Powrót do listy blogów</button>
       </div>
     </div>
   );

@@ -4,30 +4,50 @@ import models from "@/models";
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const city = searchParams.get('city');
-    const place = searchParams.get('place'); 
-    const blog = searchParams.get('blog');
-    const author = searchParams.get('author');
-    const sortBy = searchParams.get('sortBy') || 'newest';
+    const citySlug = searchParams.get('city');
+    const placeId = searchParams.get('place');
+    const blogId = searchParams.get('blog');
+    const sortBy = searchParams.get('sortBy');
     const searchQuery = searchParams.get('searchQuery');
+    const searchType = searchParams.get('searchType');
 
     await connectToDB();
+    
+    let query = {};
 
-    const query = {};
-    if (city) query.city = city;
-    if (place) query.place = place;
-    if (blog) query.blog = blog;
-    if (author) query.author = author;
-    if (searchQuery) {
-      query.$or = [
-        { title: { $regex: searchQuery, $options: 'i' } },
-        { content: { $regex: searchQuery, $options: 'i' } }
-      ];
+    if (citySlug) {
+      const city = await models.City.findOne({ slug: citySlug });
+      if (city) {
+        query.city = city._id;
+        if (placeId) query.place = placeId;
+      }
     }
 
-    let posts = await models.Post.find(query)
+    if (blogId) {
+      query.blog = blogId;
+    }
+
+    if (searchQuery) {
+      if (searchType === 'title') {
+        query.title = { $regex: searchQuery, $options: 'i' };
+      } else if (searchType === 'content') {
+        query.content = { $regex: searchQuery, $options: 'i' };
+      } else if (searchType === 'author') {
+        const users = await models.User.find({ username: { $regex: searchQuery, $options: 'i' } });
+        const userIds = users.map(user => user._id);
+        query.author = { $in: userIds };
+      } else if (searchType === 'all') {
+        query.$or = [
+          { title: { $regex: searchQuery, $options: 'i' } },
+          { content: { $regex: searchQuery, $options: 'i' } },
+          { author: { $in: await models.User.find({ username: { $regex: searchQuery, $options: 'i' } }).distinct('_id') } }
+        ];
+      }
+    }
+
+    const posts = await models.Post.find(query)
       .populate('author', 'username')
-      .populate('city', 'name slug')
+      .populate('city', 'name')
       .lean();
 
     const postsWithVotes = await Promise.all(posts.map(async (post) => {
@@ -84,38 +104,35 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    await connectToDB();
-    
-    const { title, content, city, place, blog, author } = await req.json();
+    const { title, content, attachments, author, city, place, blog } = await req.json();
 
-    if (!title || !content || !author) {
-      return new Response(
-        JSON.stringify({ error: "Brak wymaganych pól" }), 
-        { status: 400 }
-      );
-    }
+    await connectToDB();
 
     const newPost = new models.Post({
       title,
       content,
+      attachments,
+      author,
       city,
       place,
-      blog,
-      author
+      blog
     });
 
-    const savedPost = await newPost.save();
-    await savedPost.populate('author', 'username');
+    await newPost.save();
 
-    return new Response(
-      JSON.stringify(savedPost), 
-      { status: 201 }
-    );
+    return new Response(JSON.stringify(newPost), {
+      status: 201,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   } catch (error) {
-    console.error("Error creating post:", error);
-    return new Response(
-      JSON.stringify({ error: "Błąd podczas tworzenia posta" }), 
-      { status: 500 }
-    );
+    console.error('Error creating post:', error);
+    return new Response(JSON.stringify({ error: 'Error creating post' }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   }
 }
