@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function ExplorePage() {
   const [cities, setCities] = useState([]);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchCities() {
@@ -28,7 +29,7 @@ export default function ExplorePage() {
         <ul>
           {cities.map((city) => (
             <li key={city.slug}>
-              <a href={`/explore/${city.slug}`}>{city.name}</a>
+              <a onClick={() => router.push(`/explore/${city.slug}`)}>{city.name}</a>
             </li>
           ))}
         </ul>

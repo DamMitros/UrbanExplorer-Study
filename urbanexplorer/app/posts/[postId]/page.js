@@ -6,6 +6,7 @@ import { useUser } from '@/context/UserContext';
 import InteractionSection from '@/app/components/InteractionSection';
 import PostEdit from '@/app/components/PostEdit';
 import Image from 'next/image';
+import ImagePreview from '@/app/components/ImagePreview';
 
 export default function PostPage() {
   const { postId } = useParams();
@@ -90,27 +91,6 @@ export default function PostPage() {
     });
   };
 
-  const AttachmentsPreview = ({ attachments, onRemove, readOnly = false }) => {
-    return (
-      <div className="grid grid-cols-3 gap-4">
-        {attachments.map((url, index) => (
-          <div key={index} className="relative">
-            <Image
-              src={url}
-              alt={`Załącznik ${index + 1}`}
-              width={200}
-              height={200}
-              className="rounded object-cover"
-            />
-            {!readOnly && (
-              <button onClick={() => onRemove(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">×</button>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {isEditing ? (
@@ -140,9 +120,14 @@ export default function PostPage() {
           </div>
 
           {post.attachments && post.attachments.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-bold mb-4">Załączniki:</h2>
-              <AttachmentsPreview attachments={post.attachments} readOnly />
+            <div className="mt-4 grid grid-cols-3 gap-4">
+              {post.attachments.map((url, index) => (
+                <ImagePreview
+                  key={index}
+                  src={url}
+                  alt={`Zdjęcie ${index + 1}`}
+                />
+              ))}
             </div>
           )}
 

@@ -104,7 +104,7 @@ export default function PostsList({ city = null, place = null, blog = null, sort
         )}
       </div>
     ) : (
-      <div className="max-h-[600px] overflow-y-auto shadow-sm rounded-lg">
+      <div className="max-h-[350px] overflow-y-auto shadow-sm rounded-lg">
         {posts.length > 0 ? (
           <div className="space-y-2 p-2">
             {posts.map((post) => (

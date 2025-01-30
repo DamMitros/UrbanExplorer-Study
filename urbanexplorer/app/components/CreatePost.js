@@ -42,33 +42,28 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
         console.error("Błąd podczas pobierania danych:", error);
       }
     }
-    fetchInitialData();
-  }, [user._id]);
-
-  useEffect(() => {
-    if (citySlug) {
-      setAvailableBlogs(blogs.filter(blog => 
-        !blog.city || blog.city === citySlug
-      ));
-    } else {
-      setAvailableBlogs(blogs);
+    if (user?._id) {
+      fetchInitialData();
     }
-  }, [citySlug, blogs]);
+  }, [user?._id]);
 
   useEffect(() => {
     if (citySlug) {
-      async function fetchPlaces() {
-        const res = await fetch(`/api/cities/${citySlug}`);
-        if (res.ok) {
-          const data = await res.json();
-          setPlaces(data.places);
-        }
-      }
-      fetchPlaces();
-    } else {
-      setPlaces([]);
+      fetchPlaces(citySlug);
     }
   }, [citySlug]);
+
+  const fetchPlaces = async (citySlug) => {
+    try {
+      const res = await fetch(`/api/cities/${citySlug}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPlaces(data.places || []);
+      }
+    } catch (error) {
+      console.error('Błąd podczas pobierania miejsc:', error);
+    }
+  };
 
   const handleImageUpload = async (files) => {
     const formData = new FormData();
@@ -110,36 +105,6 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleCityChange = (e) => {
-    const newCitySlug = e.target.value;
-    const selectedCity = cities.find(city => city.slug === newCitySlug);
-    
-    setCitySlug(newCitySlug);
-    setSelectedCityId(selectedCity ? selectedCity._id : "");
-    setPlaceId(""); 
-
-    if (selectedBlogId) {
-      const currentBlog = blogs.find(b => b._id === selectedBlogId);
-      if (currentBlog && currentBlog.city && currentBlog.city !== newCitySlug) {
-        setSelectedBlogId("");
-      }
-    }
-  };
-
-  const handleBlogChange = (e) => {
-    const newBlogId = e.target.value;
-    setSelectedBlogId(newBlogId);
-    
-    if (newBlogId) {
-      const selectedBlog = blogs.find(b => b._id === newBlogId);
-      if (selectedBlog && selectedBlog.city) {
-        setCitySlug(selectedBlog.city);
-        const blogCity = cities.find(c => c.slug === selectedBlog.city);
-        setSelectedCityId(blogCity ? blogCity._id : "");
-      }
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -150,16 +115,14 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
       author: user._id
     };
 
-    if (selectedCityId) postData.city = selectedCityId; 
+    if (selectedCityId) postData.city = selectedCityId;
     if (placeId) postData.place = placeId;
     if (selectedBlogId) postData.blog = selectedBlogId;
 
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
       });
 
@@ -167,6 +130,9 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
         setTitle("");
         setContent("");
         setAttachments([]);
+        setCitySlug("");
+        setPlaceId("");
+        setSelectedBlogId("");
         onPostCreated();
       }
     } catch (error) {
@@ -175,22 +141,24 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg shadow-lg p-6">
       <div>
         <input
           type="text"
           placeholder="Tytuł"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full p-2 border rounded"
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
       </div>
 
-      <div className="flex gap-4 mb-4">
-        <button type="button" onClick={() => inlineImageInputRef.current.click()} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-          Dodaj zdjęcie do treści
-        </button>
+      <div>
+        <div className="flex gap-4 mb-4">
+          <button type="button" onClick={() => inlineImageInputRef.current.click()} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+            Dodaj zdjęcie do treści
+          </button>
+        </div>
         <input
           type="file"
           accept="image/*"
@@ -206,13 +174,13 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
           placeholder="Treść"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full p-2 border rounded min-h-[200px]"
+          className="w-full p-3 border rounded-lg min-h-[200px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
       </div>
 
-      <div className="border rounded p-4">
-        <h3 className="font-bold mb-2">Załączniki:</h3>
+      <div className="border rounded-lg p-6 bg-gray-50">
+        <h3 className="font-bold mb-4">Zdjęcia:</h3>
         <input
           type="file"
           accept="image/*"
@@ -229,39 +197,44 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
                 alt={`Załącznik ${index + 1}`}
                 width={200}
                 height={200}
-                className="rounded object-cover"
+                className="rounded-lg object-cover"
               />
-              <button type="button" onClick={() => removeAttachment(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">×</button>
+              <button type="button" onClick={() => removeAttachment(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors">×</button>
             </div>
           ))}
         </div>
       </div>
 
       {!blogId && !defaultPlace && (
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <select key="cities" value={citySlug} onChange={handleCityChange} className="w-full p-2 border rounded">
-              <option key="city" value="">Wybierz miasto</option>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <select value={citySlug} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => {
+                const newCitySlug = e.target.value;
+                const selectedCity = cities.find(city => city.slug === newCitySlug);
+                setCitySlug(newCitySlug);
+                setSelectedCityId(selectedCity ? selectedCity._id : "");
+                setPlaceId("");
+              }}>
+              <option value="">Wybierz miasto</option>
               {cities.map((city) => (
-                <option key={city._id} value={city.slug}>
-                  {city.name}
-                </option>
+                <option key={city._id} value={city.slug}>{city.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex-1">
-            <select key="places" value={placeId} onChange={(e) => setPlaceId(e.target.value)} className="w-full p-2 border rounded" disabled={!citySlug}>
-              <option key="place" value="">Wybierz miejsce</option>
+          <div>
+            <select value={placeId} onChange={(e) => setPlaceId(e.target.value)} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={!citySlug}>
+              <option value="">Wybierz miejsce</option>
               {places.map((place) => (
                 <option key={place._id} value={place._id}>{place.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex-1">
-            <select key="blogs" value={selectedBlogId} onChange={handleBlogChange} className="w-full p-2 border rounded">
-              <option key="blog" value="">Wybierz blog</option>
+          <div>
+            <select value={selectedBlogId} onChange={(e) => setSelectedBlogId(e.target.value)} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">Wybierz blog</option>
               {availableBlogs.map((blog) => (
                 <option key={blog._id} value={blog._id}>{blog.name}</option>
               ))}
@@ -270,7 +243,7 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
         </div>
       )}
 
-      <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Opublikuj</button>
+      <button type="submit" className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors">Opublikuj</button>
     </form>
   );
 }
