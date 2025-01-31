@@ -1,5 +1,5 @@
 "use client";
-
+import Chat from '@/app/components/Chat'
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { GoogleMap, Marker } from "@react-google-maps/api";
@@ -336,6 +336,11 @@ export default function PlacePage() {
               )}
             </div>
           </div>
+        </div>
+        
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Czat miejsca na żywo</h2>
+          <Chat room={`${city}-${placeName}`} />
         </div>
 
         <div className="mt-6">

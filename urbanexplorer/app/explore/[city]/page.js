@@ -8,6 +8,7 @@ import CreatePost from "@/app/components/CreatePost";
 import MapWrapper from "@/context/MapWrapper";
 import PostsList from "@/app/components/PostsList";
 import Image from 'next/image';
+import Chat from "@/app/components/Chat";
 
 export default function CityPage() {
   const router = useRouter();
@@ -236,6 +237,11 @@ export default function CityPage() {
 
             <PostsList city={cityData} sortBy="newest"/>
           </div>
+        </div>
+
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Czat miasta {cityData?.name} na żywo</h2>
+          <Chat room={city} />
         </div>
       </div>
     </div>
