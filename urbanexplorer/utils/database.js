@@ -3,17 +3,20 @@ import mongoose from 'mongoose';
 let isConnected = false;
 
 export const connectToDB = async () => {
-  if (isConnected) return;
+  if (isConnected) {
+    console.log('Używanie istniejącego połączenia z bazą danych');
+    return;
+  }
 
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
+    const db = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      useUnifiedTopology: true,
     });
 
     isConnected = true;
-    console.log('Połączono z bazą danych');
+    console.log('Nawiązano nowe połączenie z bazą danych');
+    return db;
   } catch (error) {
     console.error('Błąd podczas łączenia z bazą danych:', error);
     isConnected = false;

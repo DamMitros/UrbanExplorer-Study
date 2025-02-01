@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   images: {
     domains: ['localhost'],
     remotePatterns: [
@@ -12,11 +13,14 @@ const nextConfig = {
     ],
   },
   webpack: (config) => {
-    config.externals.push({
-      'utf-8-validate': 'commonjs utf-8-validate',
-      'bufferutil': 'commonjs bufferutil',
-    })
-    return config
+    config.externals = [
+      ...config.externals,
+      {
+        'utf-8-validate': 'commonjs utf-8-validate',
+        'bufferutil': 'commonjs bufferutil',
+      }
+    ];
+    return config;
   },
 };
 

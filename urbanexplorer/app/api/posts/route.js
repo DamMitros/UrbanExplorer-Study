@@ -23,9 +23,8 @@ export async function GET(req) {
       }
     }
 
-    if (blogId) {
-      query.blog = blogId;
-    }
+    if (placeId) query.place = placeId;
+    if (blogId) query.blog = blogId;
 
     if (searchQuery) {
       if (searchType === 'title') {
@@ -94,7 +93,7 @@ export async function GET(req) {
     });
 
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    console.error('Error pobierając posty:', error);
     return new Response(JSON.stringify({ error: 'Nie udało się pobrać postów' }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500
@@ -127,8 +126,8 @@ export async function POST(req) {
       }
     });
   } catch (error) {
-    console.error('Error creating post:', error);
-    return new Response(JSON.stringify({ error: 'Error creating post' }), {
+    console.error('Błąd tworząc post:', error);
+    return new Response(JSON.stringify({ error: 'Błąd tworząc post' }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json'

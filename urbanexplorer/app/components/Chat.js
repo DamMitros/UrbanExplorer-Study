@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
@@ -13,28 +13,22 @@ export default function Chat({ room }) {
   const [typingUsers, setTypingUsers] = useState([]);
   const { user } = useUser();
   const typingTimeoutRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    const socketUrl = "http://localhost:4000";
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
     const newSocket = io(socketUrl, {
       withCredentials: true,
+      transports: ["websocket"],
       reconnection: true,
-      transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     newSocket.on("connect", () => {
-      console.log("Połączono z WebSocket:", newSocket.id);
-      if (user?.username) {
+      if (user?.username && room) {
         newSocket.emit("join-room", { room, user: user.username });
       }
-    });
-
-    newSocket.on("connect_error", (err) => {
-      console.error("Błąd połączenia z WebSocket:", err);
-    });
-
-    newSocket.on("message", (data) => {
-      setMessages((prev) => [...prev, data]);
     });
 
     newSocket.on("users-update", (users) => {
@@ -48,7 +42,12 @@ export default function Chat({ room }) {
     });
 
     newSocket.on("user-stopped-typing", ({ username }) => {
-      setTypingUsers((prev) => prev.filter((user) => user !== username));
+      setTypingUsers((prev) => prev.filter((u) => u !== username));
+    });
+
+    newSocket.on("message", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
 
     setSocket(newSocket);
@@ -59,13 +58,15 @@ export default function Chat({ room }) {
         newSocket.disconnect();
       }
     };
-  }, []);
+  }, [room, user]);
 
   useEffect(() => {
-    if (socket && user?.username) {
-      socket.emit("join-room", { room, user: user.username });
+    if (socket) {
+      socket.on("load-messages", (loadedMessages) => {
+        setMessages(loadedMessages);
+      });
     }
-  }, [room]);
+  }, [socket]);
 
   const handleTyping = () => {
     if (socket && user) {
@@ -81,14 +82,11 @@ export default function Chat({ room }) {
     e.preventDefault();
     if (!message.trim() || !user || !socket) return;
 
-    const newMessage = {
+    socket.emit("message", {
       room,
       message: message.trim(),
       author: user.username,
-      reactions: [],
-    };
-
-    socket.emit("message", newMessage);
+    });
     setMessage("");
   };
 
@@ -103,6 +101,7 @@ export default function Chat({ room }) {
         {messages.map((msg, i) => (
           <ChatMessage key={i} message={msg} currentUser={user} />
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {typingUsers.length > 0 && (
