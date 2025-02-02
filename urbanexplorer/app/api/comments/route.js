@@ -1,5 +1,6 @@
 import { connectToDB } from '@/utils/database';
 import Comment from '@/models/Comment';
+import { publishMessage } from '../../../utils/mqtt.js';
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -27,6 +28,14 @@ export async function POST(req) {
       author: authorId 
     });
     await newComment.populate('author', 'username');
+    
+    publishMessage(`users/${targetId}/notifications`, {
+      title: 'Nowy komentarz',
+      message: `${newComment.author.username} skomentował twój post`,
+      timestamp: new Date(),
+      type: 'comment'
+    }); //nie działa... czemu?
+
     return new Response(JSON.stringify(newComment), { status: 201 });
   } catch (error) {
     return new Response('Błąd podczas dodawania komentarza', { status: 500 });

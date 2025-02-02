@@ -1,5 +1,6 @@
 import { connectToDB } from "../../../../utils/database";
 import City from "../../../../models/City";
+import { publishMessage } from '../../../../utils/mqtt.js';
 
 export async function POST(req, { params }) {
   const { name, description, latitude, longitude, attachments } = await req.json();
@@ -20,6 +21,17 @@ export async function POST(req, { params }) {
       attachments: attachments || [] 
     });
     await city.save();
+
+    publishMessage('places/new', {
+      title: 'Nowe miejsce',
+      message: `Dodano nowe miejsce: ${name} w ${CitySlug}`,
+      timestamp: new Date(),
+      type: 'place',
+      data: {
+        citySlug: CitySlug,
+        placeName: name
+      }
+    });
 
     return new Response(
       JSON.stringify({ message: "Dodano miejsce", place: city.places[city.places.length - 1] }),

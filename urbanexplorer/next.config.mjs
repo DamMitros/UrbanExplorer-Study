@@ -13,13 +13,12 @@ const nextConfig = {
     ],
   },
   webpack: (config) => {
-    config.externals = [
-      ...config.externals,
-      {
-        'utf-8-validate': 'commonjs utf-8-validate',
-        'bufferutil': 'commonjs bufferutil',
-      }
-    ];
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      net: false,
+      tls: false,
+      fs: false,
+    };
     return config;
   },
 };

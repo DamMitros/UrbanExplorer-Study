@@ -4,6 +4,7 @@ import next from "next";
 import Message from "./models/Message.js"; 
 import { connectToDB } from "./utils/database.js"; 
 import dotenv from 'dotenv';
+import { publishMessage } from './utils/mqtt.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -24,7 +25,11 @@ try {
   app.prepare().then(() => {
     const server = createServer((req, res) => handle(req, res));
     const io = new Server(server, {
-      cors: { origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000" }
+      cors: { origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["my-custom-header"],
+        credentials: true
+      }
     });
 
     io.on("connection", (socket) => {
@@ -45,7 +50,15 @@ try {
           const messages = await Message.find({ room })
             .sort({ timestamp: 1 })
             .populate('author', 'username')
-            .lean(); 
+            .populate({
+              path: 'replyTo',
+              select: 'message author',
+              populate: {
+                path: 'author',
+                select: 'username'
+              }
+            })
+            .lean();
           
           socket.emit("load-messages", messages);
           io.to(room).emit("users-update", Array.from(onlineUsers.get(room)));
@@ -55,30 +68,111 @@ try {
         }
       });
 
-      socket.on("message", async ({ room, message, author }) => {
+      socket.on("message", async ({ room, message, author, replyTo }) => {
         try {
           const newMessage = new Message({
             room,
             message,
             author,
-            timestamp: new Date()
+            replyTo, 
+            timestamp: new Date(),
           });
           await newMessage.save();
-          io.to(room).emit("message", newMessage);
+
+          const populatedMessage = await Message.findById(newMessage._id)
+            .populate('author', 'username')
+            .populate({
+              path: 'replyTo',
+              select: 'message author',
+              populate: {
+                path: 'author',
+                select: 'username'
+              }
+            })
+            .lean();
+          
+          io.to(room).emit("message", populatedMessage);
+
+          publishMessage('chats/new', {
+            title: 'Nowa wiadomość',
+            message: `${author} wysłał wiadomość w pokoju ${room}`,
+            timestamp: new Date(),
+            type: 'chat'
+          });
         } catch (error) {
-          console.error("Błąd zapisywania wiadomości:", error);
+          console.error("Błąd w zapisie wiadomości:", error);
         }
       });
 
-      socket.on("disconnect", () => {
-        onlineUsers.forEach((users, room) => {
-          if (socket.rooms.has(room)) {
-            const user = Array.from(users).find(u => u.id === socket.id);
-            if (user) {
-              users.delete(user);
-              io.to(room).emit("users-update", Array.from(users));
+      const typingUsers = new Map();
+
+      socket.on("typing", ({ room, username }) => {
+        if (!typingUsers.has(room)) {
+          typingUsers.set(room, new Set());
+        }
+        typingUsers.get(room).add(username);
+        io.to(room).emit("user-typing", { username });
+      });
+      
+      socket.on("stop-typing", ({ room, username }) => {
+        if (typingUsers.has(room)) {
+          typingUsers.get(room).delete(username);
+          io.to(room).emit("user-stopped-typing", { username });
+        }
+      });
+
+      socket.on("add-reaction", async ({ messageId, room, emoji, userId }) => {
+        try {
+          const message = await Message.findById(messageId);
+          if (!message) return;
+      
+          if (!message.reactions) {
+            message.reactions = {};
+          }
+      
+          if (!message.reactions[emoji]) {
+            message.reactions[emoji] = [];
+          }
+      
+          const userIndex = message.reactions[emoji].indexOf(userId);
+      
+          if (userIndex === -1) {
+            message.reactions[emoji].push(userId);
+          } else {
+            message.reactions[emoji].splice(userIndex, 1);
+            if (message.reactions[emoji].length === 0) {
+              delete message.reactions[emoji];
             }
           }
+
+          message.markModified("reactions");
+          await message.save();
+      
+          io.to(room).emit("reaction-updated", {
+            messageId: message._id,
+            reactions: message.reactions
+          });
+      
+        } catch (error) {
+          console.error("Błąd obsługi reakcji:", error);
+        }
+      });
+      
+      socket.on("leave-room", ({ room, user }) => {
+        if (room && user && onlineUsers.has(room)) {
+          onlineUsers.get(room).delete(user);
+          io.to(room).emit("users-update", Array.from(onlineUsers.get(room)));
+          console.log(`Użytkownik ${user} opuścił pokój ${room}`);
+        }
+      });
+      
+      socket.on("disconnect", () => {
+        onlineUsers.forEach((users, room) => {
+          users.forEach((username) => {
+            users.delete(username);
+            console.log(`Użytkownik ${username} rozłączony`);
+          });
+          io.to(room).emit("users-update", Array.from(users));
         });
       });
     });

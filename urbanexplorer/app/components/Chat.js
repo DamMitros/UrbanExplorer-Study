@@ -11,9 +11,22 @@ export default function Chat({ room }) {
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [replyingTo, setReplyingTo] = useState(null);
   const { user } = useUser();
   const typingTimeoutRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  const handleReaction = (messageId, emoji) => {
+    if (!user || !socket) return;
+
+    socket.emit("add-reaction", {
+      messageId,
+      room,
+      emoji,
+      userId: user._id,
+      username: user.username
+    });
+  };
 
   useEffect(() => {
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
@@ -48,6 +61,15 @@ export default function Chat({ room }) {
     newSocket.on("message", (msg) => {
       setMessages((prev) => [...prev, msg]);
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    });
+
+    newSocket.on("reaction-updated", ({ messageId, reactions }) => {
+      setMessages(prev => prev.map(msg => 
+        msg._id === messageId ? { 
+          ...msg, 
+          reactions: reactions 
+        } : msg
+      ));
     });
 
     setSocket(newSocket);
@@ -86,8 +108,11 @@ export default function Chat({ room }) {
       room,
       message: message.trim(),
       author: user.username,
+      replyTo: replyingTo ? replyingTo._id : null,
     });
+
     setMessage("");
+    setReplyingTo(null);
   };
 
   return (
@@ -97,16 +122,31 @@ export default function Chat({ room }) {
         <div className="text-sm text-gray-500">Online: {onlineUsers.length}</div>
       </div>
 
-      <div className="h-96 overflow-y-auto mb-4">
-        {messages.map((msg, i) => (
-          <ChatMessage key={i} message={msg} currentUser={user} />
-        ))}
-        <div ref={messagesEndRef} />
+      <div className="relative h-96 overflow-y-auto mb-4">
+        <div className="absolute w-full min-h-full">
+          {messages.map((msg, i) => (
+            <ChatMessage 
+              key={msg._id || i}
+              message={msg}
+              currentUser={user}
+              onReaction={handleReaction}
+              onReply={() => setReplyingTo(msg)}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {typingUsers.length > 0 && (
         <div className="text-sm text-gray-500 italic mb-2">
           {typingUsers.join(", ")} pisze...
+        </div>
+      )}
+
+      {replyingTo && (
+        <div className="bg-gray-200 p-2 rounded text-sm flex justify-between items-center mb-2">
+          <span>Odpowiadasz na: {replyingTo.message}</span>
+          <button onClick={() => setReplyingTo(null)} className="text-red-500">✕</button>
         </div>
       )}
 

@@ -2,6 +2,7 @@ import Navigation from "./components/Navigation";
 import { UserProvider } from "../context/UserContext";
 import { GoogleMapsProvider } from "../context/MapWrapper";
 import './globals.css';
+import NotificationsHandler from './components/NotificationsHandler';
 
 export const metadata = {
   title: "UrbanExplorer",
@@ -19,6 +20,7 @@ export default function RootLayout({ children }) {
           <GoogleMapsProvider>
             <Navigation />
             {children}
+            <NotificationsHandler />
           </GoogleMapsProvider>
         </UserProvider>
       </body>
