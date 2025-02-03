@@ -127,23 +127,13 @@ export default function CityPage() {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold">Miejsca w {cityData?.name}</h2>
             <div className="flex gap-2">
-              <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${
-                  viewMode === 'grid' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-              >
+              <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
               </button>
 
-              <button onClick={() => setViewMode('list')} className={`p-2 rounded ${
-                  viewMode === 'list' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-              >
+              <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -153,9 +143,7 @@ export default function CityPage() {
 
           <div className={`${viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'} max-h-[320px] overflow-y-auto pr-2`}>
             {filteredPlaces.map((place, index) => (
-              <div key={index} className={`bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer ${
-                  viewMode === 'list' ? 'p-4' : ''
-                }`} onClick={() => router.push(`/explore/${city}/${place.name}`)}>
+              <div key={index} className={`bg-white rounded-lg shadow hover:shadow-md transition cursor-pointer ${viewMode === 'list' ? 'p-4' : ''}`} onClick={() => router.push(`/explore/${city}/${place.name}`)}>
                 {viewMode === 'grid' && place.attachments && place.attachments.length > 0 && (
                   <div className="aspect-w-16 aspect-h-9 mb-4">
                     <Image

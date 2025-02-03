@@ -1,94 +1,26 @@
 "use client";
-import { useUser } from "../../context/UserContext";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 
-export default function AdminPanel() {
-  const { user } = useUser();
+import {useRouter} from "next/navigation"
+
+export default function AdminDashboard() {
   const router = useRouter();
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      router.push('/');
-    }
-  }, [user]);
-
-  useEffect(() => {
-    async function fetchUsers() {
-      const res = await fetch('/api/users');
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
-      }
-    }
-    fetchUsers();
-  }, []);
-
-  const handleDeleteUser = async (userId) => {
-    const res = await fetch(`/api/users/${userId}`, {
-      method: 'DELETE'
-    });
-    if (res.ok) {
-      setUsers(users.filter(user => user._id !== userId));
-    }
-  };
-
-  const handleToggleAdmin = async (userId, currentRole) => {
-    const res = await fetch(`/api/users/${userId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        role: currentRole === 'admin' ? 'user' : 'admin'
-      })
-    });
-    if (res.ok) {
-      setUsers(users.map(user => {
-        if (user._id === userId) {
-          return { ...user, role: currentRole === 'admin' ? 'user' : 'admin' };
-        }
-        return user;
-      }));
-    }
-  };
-
-  if (!user || user.role !== 'admin') {
-    return <p>Brak dostępu</p>;
-  }
-
   return (
-    <div>
-      <h1>Panel administratora</h1>
-      <section>
-        <h2>Użytkownicy</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Nazwa użytkownika</th>
-              <th>Email</th>
-              <th>Rola</th>
-              <th>Akcje</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user._id}>
-                <td>{user.username}</td>
-                <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>
-                  <button onClick={() => handleToggleAdmin(user._id, user.role)}>
-                    {user.role === 'admin' ? 'Usuń admina' : 'Nadaj admina'}
-                  </button>
-                  <button onClick={() => handleDeleteUser(user._id)}>Usuń użytkownika</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Panel Administratora</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a onClick={()=> router.push("/admin/users/")} className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition">
+          <h2 className="text-xl font-semibold">Zarządzaj użytkownikami</h2>
+          <p className="text-gray-600">Dodawaj, edytuj i usuwaj użytkowników</p>
+        </a>
+        <a onClick={()=> router.push("/admin/blogs")} className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition">
+          <h2 className="text-xl font-semibold">Zarządzaj blogami</h2>
+          <p className="text-gray-600">Dodawaj, edytuj i usuwaj blogi</p>
+        </a>
+        <a onClick={()=> router.push("/admin/posts")}className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition">
+          <h2 className="text-xl font-semibold">Zarządzaj postami</h2>
+          <p className="text-gray-600">Dodawaj, edytuj i usuwaj posty</p>
+        </a>
+      </div>
     </div>
   );
 }

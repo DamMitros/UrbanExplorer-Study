@@ -2,7 +2,7 @@ import { connectToDB } from '@/utils/database';
 import Comment from '@/models/Comment';
 
 export async function PUT(req, { params }) {
-  const { commentId } = params;
+  const { commentId } = await params;
   const { content } = await req.json();
 
   try {
@@ -23,7 +23,7 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  const { commentId } = params;
+  const { commentId } = await params;
 
   try {
     await connectToDB();

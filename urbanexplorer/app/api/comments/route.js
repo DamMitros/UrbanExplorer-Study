@@ -29,12 +29,17 @@ export async function POST(req) {
     });
     await newComment.populate('author', 'username');
     
-    publishMessage(`users/${targetId}/notifications`, {
+    publishMessage('comments/new', {
       title: 'Nowy komentarz',
-      message: `${newComment.author.username} skomentował twój post`,
+      message: `${newComment.author.username} dodał nowy komentarz`,
       timestamp: new Date(),
-      type: 'comment'
-    }); //nie działa... czemu?
+      type: 'comment',
+      data: { 
+        commentId: newComment._id,
+        targetType,
+        targetId 
+      }
+    });
 
     return new Response(JSON.stringify(newComment), { status: 201 });
   } catch (error) {

@@ -1,3 +1,4 @@
+import { publishMessage } from '@/utils/mqtt.js';
 import { connectToDB } from "@/utils/database";
 import models from "@/models";
 
@@ -103,7 +104,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const { title, content, attachments, author, city, place, blog } = await req.json();
+    const { title, content, attachments, author, city, place, blog, user } = await req.json();
 
     await connectToDB();
 
@@ -119,6 +120,13 @@ export async function POST(req) {
 
     await newPost.save();
 
+    publishMessage('posts/new', {
+      title: 'Nowy post',
+      message: `${user} utworzył nowy post: ${title}`,
+      timestamp: new Date(),
+      type: 'post'
+    });
+    
     return new Response(JSON.stringify(newPost), {
       status: 201,
       headers: {

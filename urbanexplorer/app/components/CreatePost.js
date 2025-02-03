@@ -112,7 +112,8 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
       title,
       content,
       attachments,
-      author: user._id
+      author: user._id,
+      user: user.username,
     };
 
     if (selectedCityId) postData.city = selectedCityId;
@@ -216,7 +217,7 @@ export default function CreatePost({ defaultCity = "", defaultPlace = "", blogId
                 setSelectedCityId(selectedCity ? selectedCity._id : "");
                 setPlaceId("");
               }}>
-              <option value="">Wybierz miasto</option>
+              <option key="city_id" value="">Wybierz miasto</option>
               {cities.map((city) => (
                 <option key={city._id} value={city.slug}>{city.name}</option>
               ))}

@@ -1,3 +1,4 @@
+import { publishMessage } from '@/utils/mqtt.js';
 import { connectToDB } from "@/utils/database";
 import City from "@/models/City";
 
@@ -24,6 +25,17 @@ export async function PUT(req, { params }) {
     
     await city.save();
 
+    publishMessage('places/verify', {
+      title: 'Zweryfikowano miejsce',
+      message: `${placeName} w ${CitySlug} zostało ${action === 'verify' ? 'zweryfikowane' : 'odrzucone'}`,
+      timestamp: new Date(),
+      type: 'place',
+      data: {
+        citySlug: CitySlug,
+        placeName
+      }
+    });
+    
     return new Response(JSON.stringify(place), { status: 200 });
   } catch (error) {
     console.error("Błąd weryfikując miejsce:", error);

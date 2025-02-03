@@ -4,7 +4,7 @@ import Blog from "@/models/Blog";
 export async function PUT(req, { params }) {
   try {
     const { blocked } = await req.json();
-    const { blogId } = params;
+    const { blogId } = await params;
 
     await connectToDB();
     const blog = await Blog.findByIdAndUpdate(

@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-google-maps/api": "^2.20.5",
     "bcryptjs": "^2.4.3",
+    "bufferutil": "^4.0.9",
     "dotenv": "^16.4.7",
     "mongoose": "^8.9.5",
     "mqtt": "^5.10.3",
@@ -20,6 +21,7 @@
     "react-dom": "^19.0.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "utf-8-validate": "^6.0.5",
     "uuid": "^11.0.5",
     "ws": "^8.18.0"
   },

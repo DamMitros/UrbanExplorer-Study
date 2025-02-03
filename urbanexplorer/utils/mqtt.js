@@ -1,83 +1,105 @@
 import mqtt from 'mqtt';
 
-let client;
-let connectRetries = 0;
-const MAX_RETRIES = 5;
+let client = null;
 let subscriptions = new Map();
+let isConnected = false;
+let pendingSubscriptions = [];
 
-const connectWithRetry = () => {
-  try {
-    client = mqtt.connect('mqtt://localhost:1883', {
-      reconnectPeriod: 5000,
-      connectTimeout: 30000,
+export const connectMQTT = () => {
+  if (!client) {
+    client = mqtt.connect(process.env.NEXT_PUBLIC_MQTT_BROKER_URL, {
+      protocol: 'ws',
+      port: 9001,
+      clientId: `mqttjs_${Math.random().toString(16).slice(2, 10)}`,
+      keepalive: 60,
+      reconnectPeriod: 1000
     });
 
     client.on('connect', () => {
-      console.log('Połączono z brokerem MQTT');
-      connectRetries = 0;
+      console.log('Połączono z MQTT');
+      isConnected = true;
+      
+      pendingSubscriptions.forEach(({topic, callback}) => {
+        subscribeToTopic(topic, callback);
+      });
+      pendingSubscriptions = [];
+
+      subscriptions.forEach((callbacks, topic) => {
+        client.subscribe(topic);
+      });
     });
 
-    client.on('error', (error) => {
-      console.error('Błąd MQTT:', error);
-      if (connectRetries < MAX_RETRIES) {
-        connectRetries++;
-        setTimeout(connectWithRetry, 5000);
+    client.on('error', (err) => {
+      console.error('Błąd MQTT:', err);
+    });
+
+    client.on('close', () => {
+      console.log('Rozłączono z brokerem MQTT');
+      client = null;
+    });
+
+    client.on('message', (topic, message) => {
+      console.log('Otrzymano wiadomość:', topic, message.toString());
+      try {
+        const parsedMessage = JSON.parse(message.toString());
+        const callbacks = subscriptions.get(topic);
+        if (callbacks) {
+          callbacks.forEach(callback => callback(parsedMessage));
+        }
+      } catch (error) {
+        console.error('Błąd podczas parsowania wiadomości MQTT:', error);
       }
     });
-
-    client.on('offline', () => {
-      console.log('Klient MQTT offline');
-    });
-
-  } catch (error) {
-    console.error('Błąd połączenia MQTT:', error);
   }
+  return client;
 };
 
-connectWithRetry();
-
 export const publishMessage = (topic, message) => {
-  if (client && client.connected) {
-    client.publish(topic, JSON.stringify(message));
+  const mqttClient = connectMQTT();
+  if (mqttClient && mqttClient.connected) {
+    console.log('Publikowanie do tematu:', topic, message);
+    mqttClient.publish(topic, JSON.stringify(message), { 
+      qos: 1,
+      retain: false 
+    });
   } else {
-    console.warn('Klient MQTT nie jest połączony, wiadomość nie została wysłana');
+    console.error('Klient MQTT nie jest połączony podczas próby publikacji:', topic);
   }
 };
 
 export const subscribeToTopic = (topic, callback) => {
-  if (client && client.connected) {
-    client.subscribe(topic, { qos: 1 }, (err) => {
-      if (!err) {
-        if (!subscriptions.has(topic)) {
-          subscriptions.set(topic, new Set());
-        }
-        subscriptions.get(topic).add(callback);
-        
-        client.on('message', (receivedTopic, message) => {
-          if (receivedTopic === topic) {
-            try {
-              const parsedMessage = JSON.parse(message.toString());
-              callback(parsedMessage);
-            } catch (error) {
-              console.error('Błąd podczas parsowania wiadomości MQTT:', error);
-            }
-          }
-        });
-      }
-    });
+  if (!client) {
+    client = connectMQTT();
+  }
+
+  if (!subscriptions.has(topic)) {
+    subscriptions.set(topic, new Set());
+  }
+  subscriptions.get(topic).add(callback);
+
+  if (client.connected) {
+    client.subscribe(topic);
+  } else {
+    pendingSubscriptions.push({ topic, callback });
   }
 };
 
 export const unsubscribeFromTopic = (topic, callback) => {
-  if (client && client.connected) {
-    if (subscriptions.has(topic)) {
-      subscriptions.get(topic).delete(callback);
-      if (subscriptions.get(topic).size === 0) {
-        client.unsubscribe(topic);
+  const mqttClient = connectMQTT();
+  if (mqttClient) {
+    const callbacks = subscriptions.get(topic);
+    if (callbacks) {
+      callbacks.delete(callback);
+      if (callbacks.size === 0) {
         subscriptions.delete(topic);
+        mqttClient.unsubscribe(topic);
       }
     }
   }
 };
 
-export default client;
+export const getSubscribedTopics = () => {
+  return Array.from(subscriptions.keys());
+};
+
+export default connectMQTT;

@@ -1,6 +1,7 @@
+import { publishMessage } from '@/utils/mqtt.js';
 import { connectToDB } from "@/utils/database";
 import Blog from "@/models/Blog";
-import User from "@/models/User"; 
+import User from "@/models/User";
 
 export async function POST(req) {
   try {
@@ -24,6 +25,13 @@ export async function POST(req) {
 
     const savedBlog = await newBlog.save();
     await savedBlog.populate('author', 'username');
+    
+    publishMessage('blogs/new', {
+      title: 'Nowy blog',
+      message: `${savedBlog.author.username} utworzył nowy blog: ${savedBlog.name}`,
+      timestamp: new Date(),
+      type: 'blog'
+    });
     
     return new Response(
       JSON.stringify(savedBlog), 

@@ -3,7 +3,7 @@ import User from "../../../../models/User";
 import bcrypt from "bcryptjs";
 
 export async function GET(req, { params }) {
-  const { userId } = params;
+  const { userId } = await params;
 
   try {
     await connectToDB();
@@ -28,7 +28,7 @@ export async function GET(req, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const userId = params.userId;
+    const userId = await params.userId;
     const { username, email, currentPassword, newPassword, role } = await request.json();
 
     await connectToDB();
@@ -39,6 +39,9 @@ export async function PUT(request, { params }) {
     }
 
     if (role !== undefined) {
+      if (!['user', 'guide', 'admin'].includes(role)) {
+        return new Response(JSON.stringify({ error: 'Nieprawidłowa rola' }), { status: 400 });
+      }
       user.role = role;
       await user.save();
       return new Response(JSON.stringify(user), { status: 200 });

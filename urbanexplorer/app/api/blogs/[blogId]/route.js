@@ -1,6 +1,8 @@
+import { publishMessage } from '../../../../utils/mqtt';
 import { connectToDB } from "@/utils/database";
 import Blog from "@/models/Blog";
 import Post from "@/models/Post"; 
+import User from "@/models/User";
 
 export async function PUT(req, { params }) {
   try {
@@ -17,6 +19,13 @@ export async function PUT(req, { params }) {
     if (!updatedBlog) {
       return new Response("Blog nie znaleziony", { status: 404 });
     }
+
+    publishMessage('blogs/update', {
+      title: 'Zaktualizowano blog',
+      message: `Zaktualizowano blog: ${updatedBlog.name}`,
+      timestamp: new Date(),
+      type: 'blog'
+    });
 
     return new Response(JSON.stringify(updatedBlog), { status: 200 });
   } catch (error) {
@@ -65,30 +74,21 @@ export async function DELETE(req, { params }) {
   try {
     await connectToDB();
     const { blogId } = await params;
-    const { searchParams } = new URL(req.url);
-    const deletePosts = searchParams.get('deletePosts') === 'true';
+    const blog = await Blog.findByIdAndDelete(blogId);
 
-    const blog = await Blog.findById(blogId);
     if (!blog) {
-      return new Response(
-        JSON.stringify({ error: "Blog nie znaleziony" }), 
-        { status: 404 }
-      );
+      return new Response("Blog nie znaleziony", { status: 404 });
     }
 
-    if (deletePosts) {
-      await Post.deleteMany({ blog: blogId });
-    } else {
-      await Post.updateMany({ blog: blogId }, { $unset: { blog: 1 } });
-    }
-
-    await Blog.findByIdAndDelete(blogId);
+    publishMessage('blogs/delete', {
+      title: 'Usunięto blog',
+      message: `Usunięto blog: ${blog.name}`,
+      timestamp: new Date(),
+      type: 'blog'
+    });
 
     return new Response(null, { status: 204 });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Błąd podczas usuwania bloga" }), 
-      { status: 500 }
-    );
+    return new Response("Błąd podczas usuwania bloga", { status: 500 });
   }
 }

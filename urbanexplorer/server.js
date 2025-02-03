@@ -4,7 +4,7 @@ import next from "next";
 import Message from "./models/Message.js"; 
 import { connectToDB } from "./utils/database.js"; 
 import dotenv from 'dotenv';
-import { publishMessage } from './utils/mqtt.js';
+import { connectMQTT, publishMessage } from './utils/mqtt.js';
 
 dotenv.config({ path: '.env.local' });
 
@@ -22,12 +22,27 @@ try {
   await connectToDB();
   console.log('Połączono z MongoDB');
 
+  const mqttClient = await connectMQTT();
+  mqttClient.on('connect', () => {
+    console.log('MQTT Broker połączony i gotowy do publikowania');
+    const topics = ['chats/#', 'blogs/#', 'posts/#', 'comments/#', 'places/#'];
+    topics.forEach(topic => {
+      mqttClient.subscribe(topic, { qos: 1 }, (err) => {
+        if (err) console.error(`Błąd subskrypcji do ${topic}:`, err);
+        else console.log(`Zasubskrybowano do ${topic}`);
+      });
+    });
+  });
+
+  mqttClient.on('error', (err) => {
+    console.error('Błąd MQTT:', err);
+  });
+
   app.prepare().then(() => {
     const server = createServer((req, res) => handle(req, res));
     const io = new Server(server, {
       cors: { origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
         methods: ["GET", "POST"],
-        allowedHeaders: ["my-custom-header"],
         credentials: true
       }
     });
@@ -64,7 +79,6 @@ try {
           io.to(room).emit("users-update", Array.from(onlineUsers.get(room)));
         } catch (error) {
           console.error("Błąd w join-room:", error);
-          socket.emit("error", "Nie udało się załadować wiadomości");
         }
       });
 
@@ -165,15 +179,31 @@ try {
           console.log(`Użytkownik ${user} opuścił pokój ${room}`);
         }
       });
-      
+
+      socket.on("room-created", (newRoom) => {
+        io.emit("new-room", newRoom);
+        
+        publishMessage('chats/new', {
+          title: 'Nowy pokój rozmów',
+          message: `Utworzono nowy pokój: ${newRoom.name}`,
+          timestamp: new Date(),
+          type: 'chat',
+          data: { roomId: newRoom._id }
+        });
+      });
+
       socket.on("disconnect", () => {
         onlineUsers.forEach((users, room) => {
-          users.forEach((username) => {
-            users.delete(username);
-            console.log(`Użytkownik ${username} rozłączony`);
-          });
-          io.to(room).emit("users-update", Array.from(users));
+          if (socket.rooms.has(room)) {
+            users.forEach(username => {
+              if (users.has(username)) {
+                users.delete(username);
+                io.to(room).emit("users-update", Array.from(users));
+              }
+            });
+          }
         });
+        console.log("Klient rozłączony:", socket.id);
       });
     });
 

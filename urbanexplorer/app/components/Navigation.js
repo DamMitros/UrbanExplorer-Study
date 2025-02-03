@@ -18,7 +18,7 @@ export default function Navigation() {
           <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/explore")}>Odkrywaj</a>
           <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/blogs")}>Blogi</a>
           <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/posts")}>Posty</a>
-          <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/contact")}>Kontakt</a>
+          <a className="text-white hover:text-yellow-300 transition duration-300 ease-in-out transform hover:scale-110" onClick={()=> router.push("/chats")}>Czaty</a>
           {user ? (
             <>
               {user?.role === 'admin' && (
