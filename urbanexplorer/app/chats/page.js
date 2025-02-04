@@ -87,62 +87,95 @@ export default function ChatRoomsPage() {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-xl text-slate-600 animate-pulse">Aby korzystać z czatów, zaloguj się...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-4 min-h-screen bg-gray-50 overflow-hidden">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
-        <div className="md:col-span-1 bg-white rounded-lg shadow-lg p-4 overflow-y-auto max-h-screen">
-          <div className="flex justify-between items-center mb-6 border-b pb-2">
-            <h2 className="text-2xl font-bold text-gray-800">Pokoje czatu</h2>
-            <button onClick={() => setIsCreating(!isCreating)} className="text-blue-500 hover:text-blue-600">
-              {isCreating ? 'Anuluj' : '+ Nowy'}
-            </button>
-          </div>
-
-          {isCreating && (
-            <form onSubmit={handleCreateRoom} className="mb-4 space-y-3">
-              <input
-                type="text"
-                value={newRoomName}
-                onChange={(e) => setNewRoomName(e.target.value)}
-                placeholder="Nazwa pokoju"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <textarea
-                value={newRoomDescription}
-                onChange={(e) => setNewRoomDescription(e.target.value)}
-                placeholder="Opis pokoju"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Utwórz pokój</button>
-            </form>
-          )}
-
-          <div className="space-y-2">
-            {rooms.map((room) => (
-              <button key={room._id} onClick={() => setSelectedRoom(room)} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedRoom?._id === room._id? 'bg-blue-500 text-white': 'hover:bg-gray-100 text-gray-700'}`}>
-                <span className="font-medium block">{room.name}</span>
-                <span className="text-sm text-gray-500">{room.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="md:col-span-3 bg-white rounded-lg shadow-lg p-4">
-          {selectedRoom ? (
-            <>
-              <div className="border-b pb-4 mb-4">
-                <h3 className="text-xl font-bold text-gray-800">{selectedRoom.name}</h3>
-                <p className="text-sm text-gray-600">{selectedRoom.description}</p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 p-6 min-h-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-800">Pokoje czatu</h2>
+                <button onClick={() => setIsCreating(!isCreating)} className="text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    {isCreating ? (
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    ) : (
+                      <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                    )}
+                  </svg>
+                  {isCreating ? 'Anuluj' : 'Nowy pokój'}
+                </button>
               </div>
-              <Chat room={selectedRoom.name} />
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-[calc(100vh-200px)] text-gray-500">
-              <p>Wybierz pokój czatu aby rozpocząć rozmowę</p>
+
+              {isCreating && (
+                <form onSubmit={handleCreateRoom} className="mb-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Nazwa pokoju</label>
+                    <input
+                      type="text"
+                      value={newRoomName}
+                      onChange={(e) => setNewRoomName(e.target.value)}
+                      placeholder="Wprowadź nazwę pokoju"
+                      className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Opis</label>
+                    <textarea
+                      value={newRoomDescription}
+                      onChange={(e) => setNewRoomDescription(e.target.value)}
+                      placeholder="Opisz pokój"
+                      className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+                      rows={3}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200">Utwórz pokój</button>
+                </form>
+              )}
+
+              <div className="space-y-2 overflow-y-auto" style={{ height: '560px' }}>
+                {rooms.map((room) => (
+                  <button key={room._id} onClick={() => setSelectedRoom(room)} className={`w-full text-left p-4 rounded-lg transition-colors ${selectedRoom?._id === room._id ? 'bg-blue-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                    <h3 className="font-semibold mb-1">{room.name}</h3>
+                    <p className={`text-sm ${selectedRoom?._id === room._id ? 'text-blue-100' : 'text-slate-500'}`}>{room.description}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
+
+          <div className="md:col-span-2">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 p-6 min-h-[calc(100vh-200px)]">
+              {selectedRoom ? (
+                <>
+                  <div className="border-b border-slate-200 pb-4 mb-4">
+                    <h3 className="text-2xl font-bold text-slate-800 mb-2">{selectedRoom.name}</h3>
+                    <p className="text-slate-600">{selectedRoom.description}</p>
+                  </div>
+                  <div style={{ height: 'auto' }}>
+                    <Chat room={selectedRoom.name} />
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p className="text-lg">Wybierz pokój czatu aby rozpocząć rozmowę</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

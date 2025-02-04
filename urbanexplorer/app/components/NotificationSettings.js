@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const NOTIFICATION_CATEGORIES = {
   chats: "Czaty i wiadomości",
@@ -10,8 +10,25 @@ const NOTIFICATION_CATEGORIES = {
   places: "Miejsca"
 };
 
+const STORAGE_KEY = 'notificationSettings';
+
 export default function NotificationSettings() {
-  const [categories, setCategories] = useState(NOTIFICATION_CATEGORIES);
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem(STORAGE_KEY);
+      if (savedSettings) {
+        return JSON.parse(savedSettings);
+      }
+    }
+    return Object.keys(NOTIFICATION_CATEGORIES).reduce((acc, key) => ({
+      ...acc,
+      [key]: true
+    }), {});
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
+  }, [categories]);
 
   const handleToggle = (category) => {
     setCategories(prev => ({

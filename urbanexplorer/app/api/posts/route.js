@@ -8,6 +8,7 @@ export async function GET(req) {
     const citySlug = searchParams.get('city');
     const placeId = searchParams.get('place');
     const blogId = searchParams.get('blog');
+    const authorId = searchParams.get('author');
     const sortBy = searchParams.get('sortBy');
     const searchQuery = searchParams.get('searchQuery');
     const searchType = searchParams.get('searchType');
@@ -23,7 +24,7 @@ export async function GET(req) {
         if (placeId) query.place = placeId;
       }
     }
-
+    if (authorId) query.author = authorId;
     if (placeId) query.place = placeId;
     if (blogId) query.blog = blogId;
 

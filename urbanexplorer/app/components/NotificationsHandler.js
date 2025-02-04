@@ -80,32 +80,45 @@ export default function NotificationsHandler() {
 
   const clearAll = () => setNotifications([]);
 
+  const removeNotification = (notificationId) => {
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
+
+  useEffect(() => {
+    const timeouts = notifications.map(notification => {
+      return setTimeout(() => {
+        removeNotification(notification.id);
+      }, 120000);
+    });
+
+    return () => timeouts.forEach(timeout => clearTimeout(timeout));
+  }, [notifications]);
+
   return (
-    <div className="fixed top-20 right-4 z-50 max-w-md">
-      <div className="bg-white shadow-lg rounded-lg p-4">
-        {!client ? (
-          <div>Łączenie z systemem powiadomień...</div>
-        ) : (
-          <>
-            {notifications.length === 0 ? (
-              <div>Brak nowych powiadomień</div>
-            ) : (
-              notifications.map((notification) => (
-                <div key={notification.id} className={`mb-2 p-3 rounded border ${notification.read ? 'opacity-60' : ''}`}>
-                  <h4 className="font-bold">{notification.title}</h4>
-                  <p className="text-sm">{notification.message}</p>
-                  <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
-                    <span>{new Date(notification.timestamp).toLocaleTimeString()}</span>
-                    {!notification.read && (
-                      <button onClick={() => markAsRead(notification.id)} className="text-blue-500 hover:text-blue-600">Oznacz jako przeczytane</button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </>
-        )}
-      </div>
+    <div className="fixed top-20 right-4 z-50 space-y-2">
+      {notifications.map((notification) => (
+        <div
+          key={notification.id}
+          className={`max-w-sm bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-in-out hover:scale-102 ${notification.read ? 'opacity-60' : ''}`}>
+          <div className="p-4">
+            <div className="flex items-start">
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-gray-900">{notification.title}</h4>
+                <p className="mt-1 text-sm text-gray-500">{notification.message}</p>
+                <p className="mt-1 text-xs text-gray-400">{new Date(notification.timestamp).toLocaleTimeString()}</p>
+              </div>
+              <div className="ml-4 flex-shrink-0 flex">
+                <button onClick={() => removeNotification(notification.id)} className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <span className="sr-only">Zamknij</span>
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

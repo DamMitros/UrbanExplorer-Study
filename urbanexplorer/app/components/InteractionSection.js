@@ -40,7 +40,6 @@ export default function InteractionSection({ targetType, targetId }) {
 
   const handleVote = async (value) => {
     if (!user) {
-      alert('Musisz być zalogowany aby głosować!');
       return;
     }
 
@@ -113,12 +112,7 @@ export default function InteractionSection({ targetType, targetId }) {
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-6">
             <button onClick={() => handleVote(1)} 
-              className={`flex items-center space-x-2 transition-colors duration-200 ${
-                userVote === 1 
-                  ? 'text-blue-600' 
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
+              className={`flex items-center space-x-2 transition-colors duration-200 ${userVote === 1 ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600'}`}>
               <svg className="w-6 h-6" fill={userVote === 1 ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9"/>
               </svg>
@@ -126,12 +120,7 @@ export default function InteractionSection({ targetType, targetId }) {
             </button>
 
             <button onClick={() => handleVote(-1)} 
-              className={`flex items-center space-x-2 transition-colors duration-200 ${
-                userVote === -1 
-                  ? 'text-red-600' 
-                  : 'text-gray-600 hover:text-red-600'
-              }`}
-            >
+              className={`flex items-center space-x-2 transition-colors duration-200 ${userVote === -1 ? 'text-red-600' : 'text-gray-600 hover:text-red-600'}`}>
               <svg className="w-6 h-6" fill={userVote === -1 ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4"/>
               </svg>
@@ -148,9 +137,7 @@ export default function InteractionSection({ targetType, targetId }) {
         </div>
       </div>
 
-      <div className={`overflow-hidden transition-all duration-300 ${
-        isCommentsVisible ? 'max-h-[1000px]' : 'max-h-0'
-      }`}>
+      <div className={`overflow-hidden transition-all duration-300 ${ isCommentsVisible ? 'max-h-[1000px]' : 'max-h-0'}`}>
         <div className="p-4 bg-gray-50">
           <Comments targetType={targetType} targetId={targetId} />
         </div>

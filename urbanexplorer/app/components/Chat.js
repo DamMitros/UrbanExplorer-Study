@@ -122,7 +122,7 @@ export default function Chat({ room }) {
         <div className="text-sm text-gray-500">Online: {onlineUsers.length}</div>
       </div>
 
-      <div className="relative h-96 overflow-y-auto mb-4">
+      <div className="relative h-96 overflow-y-auto mb-4 flex flex-col-reverse">
         <div className="absolute w-full min-h-full">
           {messages.map((msg, i) => (
             <ChatMessage 

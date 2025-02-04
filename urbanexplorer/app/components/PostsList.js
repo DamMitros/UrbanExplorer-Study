@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import InteractionSection from './InteractionSection';
 
-export default function PostsList({ city = null, place = null, blog = null, sortBy = "newest", searchQuery = "", searchType = "default" }) {
+export default function PostsList({ city = null, place = null, blog = null, user123 = null, sortBy = "newest", searchQuery = "", searchType = "default" }) {
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +13,7 @@ export default function PostsList({ city = null, place = null, blog = null, sort
     async function fetchPosts() {
       try {
         const queryParams = new URLSearchParams();
+        if (user123?._id) queryParams.append('author', user123._id);
         if (blog?._id) queryParams.append('blog', blog._id);
         if (city?.slug) queryParams.append('city', city.slug);
         if (place?._id) queryParams.append('place', place._id);
@@ -21,7 +22,7 @@ export default function PostsList({ city = null, place = null, blog = null, sort
           queryParams.append('searchQuery', searchQuery);
           queryParams.append('searchType', searchType);
         }
-
+        
         const res = await fetch(`/api/posts?${queryParams}`);
         
         if (res.ok) {
@@ -35,7 +36,7 @@ export default function PostsList({ city = null, place = null, blog = null, sort
       }
     }
     fetchPosts();
-  }, [city, place, blog, sortBy, searchQuery, searchType]);
+  }, [city, place, blog, user123, sortBy, searchQuery, searchType]);
 
   if (loading) {
     return <div className="text-center p-4 text-gray-500">Ładowanie postów...</div>;
@@ -104,7 +105,7 @@ export default function PostsList({ city = null, place = null, blog = null, sort
         )}
       </div>
     ) : (
-      <div className="max-h-[350px] overflow-y-auto shadow-sm rounded-lg">
+      <div className="max-h-[500px] overflow-y-auto shadow-sm rounded-lg">
         {posts.length > 0 ? (
           <div className="space-y-2 p-2">
             {posts.map((post) => (
