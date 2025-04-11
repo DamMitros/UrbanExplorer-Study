@@ -7,7 +7,7 @@ const GoogleMapsContext = createContext(null);
 
 export function GoogleMapsProvider({ children }) {
   return (
-    <LoadScript googleMapsApiKey="AIzaSyCEGWjV-pmk4uV7lx9JXVCst0jI_yghgeY">
+    <LoadScript googleMapsApiKey="Outdated">
       <GoogleMapsContext.Provider value={true}>
         {children}
       </GoogleMapsContext.Provider>
